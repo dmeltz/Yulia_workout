@@ -1,0 +1,223 @@
+<title>Workout Buddy Styles</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap">
+<style>
+/* Layout: a stack of style options. Each one shows the same five moods in a row, so they're easy to compare. */
+:root {
+  --bg: #f3f1f8; --surface: #ffffff; --fg: #231f33; --muted: #6b6580; --line: #e0dcea; --accent: #6a4cff;
+  --display: "Fredoka", "Nunito", system-ui, sans-serif;
+  --body: "Nunito", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #15131d; --surface: #1f1c2b; --fg: #eeebf7; --muted: #a39db8; --line: #322e44; --accent: #9b85ff; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #15131d; --surface: #1f1c2b; --fg: #eeebf7; --muted: #a39db8; --line: #322e44; --accent: #9b85ff; color-scheme: dark; }
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 56px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); font-weight: 700; }
+h2 { font-size: 1.4rem; font-weight: 600; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 64ch; }
+.option { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.option header { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.tag { font-family: var(--display); font-weight: 700; color: var(--surface); background: var(--accent); border-radius: 999px; padding: 2px 12px; font-size: 0.95rem; }
+.option p { color: var(--muted); max-width: 70ch; }
+.row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 760px) { .row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 460px) { .row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+figure svg { width: 100%; height: auto; max-width: 170px; }
+figcaption { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); text-align: center; }
+.photo { width: 100%; max-width: 150px; aspect-ratio: 3 / 4; border: 2px dashed var(--line); border-radius: 14px; display: grid; place-items: center; color: var(--muted); font-size: 0.85rem; text-align: center; padding: 8px; }
+.photo svg { width: 40px; }
+/* motion */
+.shake { animation: shake 0.35s linear infinite; transform-box: fill-box; transform-origin: center bottom; }
+.bob { animation: bob 1s ease-in-out infinite; }
+.sway { animation: sway 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+.drip { animation: drip 1.6s ease-in infinite; }
+.twinkle { animation: twinkle 1.3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-2px) } 75% { transform: translateX(2px) } }
+@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+@keyframes sway { 0%,100% { transform: rotate(-1.5deg) } 50% { transform: rotate(1.5deg) } }
+@keyframes drip { 0% { transform: translateY(0); opacity: 1 } 100% { transform: translateY(34px); opacity: 0 } }
+@keyframes twinkle { 0%,100% { transform: scale(0.7); opacity: .6 } 50% { transform: scale(1.15); opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { svg * { animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>Pick a style for the widget</h1>
+    <p class="lede">Here are three more realistic directions, each shown across the same five moods: morning, afternoon, evening, late night and workout done. Pick one, or mix them, for example A's character with B's pictures.</p>
+  </header>
+
+  <section class="option">
+    <header><span class="tag">A</span><h2>Iron Kettle</h2></header>
+    <p>A real cast-iron kettlebell with shading and lifelike eyes. The weight stamped on it goes up as the day goes on, from 8 kg to 24 kg. Mark the workout done and Kettle drops to a light 4 kg and gets a gold shine.</p>
+    <div class="row" id="rowA"></div>
+  </section>
+
+  <section class="option">
+    <header><span class="tag">B</span><h2>The Mirror</h2></header>
+    <p>A figure in sportswear in a gold mirror, and it's the bluntest of the three. The waist and hips widen through the day, a donut shows up in the evening, and late at night the mirror cracks. Mark it done and the figure is slim and toned, with sparkles.</p>
+    <div class="row" id="rowB"></div>
+  </section>
+
+  <section class="option">
+    <header><span class="tag">C</span><h2>Real photos</h2></header>
+    <p>This is the most realistic option. Take five selfies (or pick five photos), one for each mood: smiling, side-eye, angry, crying, and showing off. The widget shows the one that matches the time of day. I can't download stock photos from here, so this one would use your own pictures.</p>
+    <div class="row" id="rowC"></div>
+  </section>
+</div>
+
+<script>
+const MOODS = ["happy", "impatient", "angry", "sad", "done"];
+const LABEL = { happy: "Morning", impatient: "Afternoon", angry: "Evening", sad: "Late night", done: "Done" };
+let uid = 0;
+
+/* ---------- A: Iron Kettle ---------- */
+function ironKettle(m) {
+  const id = "k" + (uid++);
+  const cfg = {
+    happy:     { sx: 1.00, kg: "8",  rim: "#4fc3b0", iris: "#3a8f6a" },
+    impatient: { sx: 1.08, kg: "12", rim: "#f2b544", iris: "#7a5a2a" },
+    angry:     { sx: 1.18, kg: "16", rim: "#ff4a3a", iris: "#7a2a2a" },
+    sad:       { sx: 1.30, kg: "24", rim: "#7c8cc4", iris: "#3d5a9a" },
+    done:      { sx: 0.86, kg: "4",  rim: "#ffcf4a", iris: "#3a8f6a" }
+  }[m];
+  const metal = m === "done"
+    ? `<stop offset="0" stop-color="#fff3c4"/><stop offset=".45" stop-color="#d9a73a"/><stop offset="1" stop-color="#6b4a10"/>`
+    : `<stop offset="0" stop-color="#9aa0aa"/><stop offset=".4" stop-color="#4a4e57"/><stop offset="1" stop-color="#14151a"/>`;
+  const rx = 60 * cfg.sx;
+  const eye = (x, flip) => {
+    let lid = "";
+    if (m === "impatient") lid = `<path d="M${x-13} ${124} h26 v-14 h-26z" fill="url(#${id}b)"/><path d="M${x-13} 124 h26" stroke="#111" stroke-width="2.5"/>`;
+    if (m === "angry") lid = `<path d="M${x-14} ${flip ? 108 : 118} L${x+14} ${flip ? 118 : 108} L${x+14} 100 L${x-14} 100z" fill="url(#${id}b)"/>`;
+    if (m === "sad") lid = `<path d="M${x-14} ${flip ? 112 : 118} L${x+14} ${flip ? 118 : 112} L${x+14} 104 L${x-14} 104z" fill="url(#${id}b)"/>`;
+    const look = m === "impatient" ? 5 : 0;
+    if (m === "done") return `<path d="M${x-11} 128 Q${x} 114 ${x+11} 128" stroke="#111" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+    return `<ellipse cx="${x}" cy="128" rx="12" ry="${m === "sad" ? 13 : 11}" fill="url(#${id}e)"/>
+      <circle cx="${x + look}" cy="129" r="6.5" fill="${cfg.iris}"/><circle cx="${x + look}" cy="129" r="3.4" fill="#0b0b0e"/>
+      <circle cx="${x + look + 2.5}" cy="126" r="1.8" fill="#fff"/>${lid}`;
+  };
+  const brows = {
+    happy: "M68 108 Q80 102 92 107 M108 107 Q120 102 132 108",
+    impatient: "M68 110 L92 111 M108 104 Q120 96 132 103",
+    angry: "M66 104 L94 116 M134 104 L106 116",
+    sad: "M68 116 L92 106 M132 116 L108 106",
+    done: "M68 106 Q80 100 92 105 M108 105 Q120 100 132 106"
+  }[m];
+  const mouth = {
+    happy: `<path d="M84 152 Q100 166 116 152" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>`,
+    impatient: `<path d="M88 157 Q102 153 114 155" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>`,
+    angry: `<path d="M82 162 Q100 148 118 162 Q100 158 82 162Z" fill="#2a0c0c" stroke="#111" stroke-width="3"/><path d="M88 159 h24" stroke="#eee" stroke-width="2.5"/>`,
+    sad: `<path d="M84 163 Q92 154 100 159 Q108 154 116 163" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>`,
+    done: `<path d="M80 148 Q100 176 120 148Z" fill="#2a0c0c"/><path d="M90 161 Q100 154 110 161 Q100 170 90 161Z" fill="#e8667a"/><path d="M84 149 h32" stroke="#fff" stroke-width="3"/>`
+  }[m];
+  const extra = {
+    happy: "",
+    impatient: "",
+    angry: `<g opacity=".7"><path class="drip" d="M58 34 q-7 -7 0 -14 q7 -7 0 -14" stroke="#c9c6d3" stroke-width="5" fill="none" stroke-linecap="round" style="animation-name:none"/><path d="M142 34 q-7 -7 0 -14 q7 -7 0 -14" stroke="#c9c6d3" stroke-width="5" fill="none" stroke-linecap="round"/></g>`,
+    sad: `<path class="drip" d="M76 142 q-5 9 0 13 q5 -4 0 -13z" fill="#7fd3ff"/><path class="drip" style="animation-delay:.8s" d="M124 142 q-5 9 0 13 q5 -4 0 -13z" fill="#7fd3ff"/>
+          <g transform="translate(${100 + rx + 4} 178)"><circle r="16" fill="#c98a45"/><circle r="13" fill="#f48fb8"/><circle r="5" fill="#c98a45"/><path d="M-7 -8h4M4 6h4M5 -5h4M-8 4h4" stroke="#fff" stroke-width="2"/></g>`,
+    done: `<g class="twinkle"><path d="M30 40 l3 9 l9 3 l-9 3 l-3 9 l-3 -9 l-9 -3 l9 -3z" fill="#ffd84a"/></g><g class="twinkle" style="animation-delay:.6s"><path d="M168 56 l2 7 l7 2 l-7 2 l-2 7 l-2 -7 l-7 -2 l7 -2z" fill="#fff6c8"/></g>`
+  }[m];
+  const anim = { happy: "", impatient: "sway", angry: "shake", sad: "", done: "bob" }[m];
+  return `<svg viewBox="-10 0 220 214" role="img" aria-label="Iron Kettle, ${LABEL[m]}">
+    <defs>
+      <radialGradient id="${id}b" cx=".35" cy=".3" r=".8">${metal}</radialGradient>
+      <linearGradient id="${id}h" x1="0" x2="1">${metal}</linearGradient>
+      <radialGradient id="${id}e" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#cfd2da"/></radialGradient>
+      <filter id="${id}s" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+    </defs>
+    <ellipse cx="100" cy="202" rx="${rx * 0.95}" ry="8" fill="#000" opacity=".25" filter="url(#${id}s)"/>
+    ${extra && m === "done" ? extra : ""}
+    <g class="${anim}">
+      <circle cx="100" cy="134" r="${rx + 6}" fill="${cfg.rim}" opacity=".35" filter="url(#${id}s)"/>
+      <path d="M${100 - 40 * cfg.sx} 98 C${100 - 46 * cfg.sx} 30 ${100 + 46 * cfg.sx} 30 ${100 + 40 * cfg.sx} 98" stroke="url(#${id}h)" stroke-width="18" fill="none" stroke-linecap="round"/>
+      <path d="M${100 - 34 * cfg.sx} 82 C${100 - 36 * cfg.sx} 44 ${100 - 10} 38 100 38" stroke="#fff" stroke-opacity=".25" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <rect x="${100 - rx * 0.7}" y="184" width="${rx * 1.4}" height="14" rx="6" fill="url(#${id}h)"/>
+      <ellipse cx="100" cy="134" rx="${rx}" ry="60" fill="url(#${id}b)"/>
+      <ellipse cx="${100 - rx * 0.4}" cy="100" rx="${rx * 0.28}" ry="12" fill="#fff" opacity=".22" transform="rotate(-28 ${100 - rx * 0.4} 100)"/>
+      <rect x="${100 + rx * 0.35}" y="152" width="30" height="18" rx="4" fill="#000" opacity=".25"/>
+      <text x="${100 + rx * 0.35 + 15}" y="165.5" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="11" fill="${m === "done" ? "#5a3b05" : "#c9ccd4"}">${cfg.kg}kg</text>
+      <path d="${brows}" stroke="#111" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+      ${eye(80, false)}${eye(120, true)}
+      ${mouth}
+      ${m !== "done" ? extra : ""}
+    </g>
+  </svg>`;
+}
+
+/* ---------- B: The Mirror ---------- */
+function mirror(m) {
+  const id = "m" + (uid++);
+  const f = { done: [15, 27], happy: [19, 30], impatient: [24, 34], angry: [30, 39], sad: [37, 45] }[m];
+  const w = f[0], h = f[1], s = 25, c = 22 + (w - 15) * 0.35, x = 100;
+  const body = `M${x-s} 84 C${x-s-3} 96 ${x-c} 100 ${x-c} 108 C${x-c} 118 ${x-w} 122 ${x-w} 132 C${x-w} 144 ${x-h} 148 ${x-h} 160
+    C${x-h} 176 ${x-h+8} 204 ${x-12} 242 L${x-3} 242 L${x-2} 186 L${x+2} 186 L${x+3} 242 L${x+12} 242
+    C${x+h-8} 204 ${x+h} 176 ${x+h} 160 C${x+h} 148 ${x+w} 144 ${x+w} 132 C${x+w} 122 ${x+c} 118 ${x+c} 108 C${x+c} 100 ${x+s+3} 96 ${x+s} 84 Z`;
+  const armOut = (w - 15) * 0.5;
+  const tint = { happy: "#fff1c9", impatient: "#e9ecf2", angry: "#ffd0cb", sad: "#c9d0e6", done: "#d8f6dc" }[m];
+  const crack = m === "sad" ? `<path d="M150 40 L128 78 L140 92 L118 128 L132 140 L112 182 M128 78 L104 84 M140 92 L166 110 M118 128 L92 120" stroke="#fff" stroke-width="2.5" fill="none" opacity=".9"/><path d="M150 40 L128 78 L140 92 L118 128" stroke="#5a6080" stroke-width="1" fill="none"/>` : "";
+  const donut = (m === "angry" || m === "sad") ? `<g transform="translate(${x + s + 10 + armOut} 156)"><circle r="11" fill="#c98a45"/><circle r="9" fill="#f48fb8"/><circle r="3.5" fill="#c98a45"/></g>` : "";
+  const sparkles = m === "done" ? `<g class="twinkle"><path d="M40 70 l3 9 l9 3 l-9 3 l-3 9 l-3 -9 l-9 -3 l9 -3z" fill="#fff"/></g><g class="twinkle" style="animation-delay:.5s"><path d="M158 150 l2 7 l7 2 l-7 2 l-2 7 l-2 -7 l-7 -2 l7 -2z" fill="#fff"/></g><g class="twinkle" style="animation-delay:.9s"><path d="M150 60 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 l6 -2z" fill="#ffd84a"/></g>` : "";
+  const red = m === "angry" ? `<ellipse cx="100" cy="140" rx="80" ry="122" fill="#ff3b2f" opacity=".12"/>` : "";
+  const pose = m === "done"
+    ? `<path d="M${x-s} 86 Q${x-s-16} 70 ${x-s-10} 52" stroke="url(#${id}k)" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="${x-s-12}" cy="66" r="6" fill="url(#${id}k)"/>
+       <path d="M${x+s} 86 Q${x+s+16} 70 ${x+s+10} 52" stroke="url(#${id}k)" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="${x+s+12}" cy="66" r="6" fill="url(#${id}k)"/>`
+    : `<path d="M${x-s} 86 Q${x-s-8-armOut} 118 ${x-s-6-armOut} 156" stroke="url(#${id}k)" stroke-width="10" fill="none" stroke-linecap="round"/>
+       <path d="M${x+s} 86 Q${x+s+8+armOut} 118 ${x+s+6+armOut} 156" stroke="url(#${id}k)" stroke-width="10" fill="none" stroke-linecap="round"/>`;
+  const anim = m === "done" ? "bob" : m === "angry" ? "shake" : "";
+  return `<svg viewBox="0 0 200 284" role="img" aria-label="Mirror, ${LABEL[m]}">
+    <defs>
+      <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a1"/><stop offset=".5" stop-color="#c8962e"/><stop offset="1" stop-color="#7a5510"/></linearGradient>
+      <linearGradient id="${id}k" x1="0" x2="1"><stop offset="0" stop-color="#e9b48f"/><stop offset=".5" stop-color="#f6cfb0"/><stop offset="1" stop-color="#d39a74"/></linearGradient>
+      <linearGradient id="${id}r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="${tint}"/></linearGradient>
+      <clipPath id="${id}c"><path d="${body}"/></clipPath>
+      <clipPath id="${id}o"><ellipse cx="100" cy="140" rx="80" ry="122"/></clipPath>
+    </defs>
+    <ellipse cx="100" cy="140" rx="80" ry="122" fill="url(#${id}r)"/>
+    <g clip-path="url(#${id}o)">
+      <path d="M20 60 L70 0 L95 0 L20 90Z" fill="#fff" opacity=".35"/>
+      ${red}
+      <g class="${anim}">
+        ${pose}
+        <rect x="${x-5}" y="66" width="10" height="16" fill="url(#${id}k)"/>
+        <ellipse cx="${x}" cy="52" rx="14" ry="16" fill="url(#${id}k)"/>
+        <path d="M${x-15} 50 Q${x-14} 32 ${x} 33 Q${x+16} 33 ${x+15} 52 Q${x+12} 40 ${x} 40 Q${x-10} 40 ${x-15} 50Z" fill="#4a2c1d"/>
+        <path d="M${x+12} 40 Q${x+26} 44 ${x+22} 66" stroke="#4a2c1d" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="${body}" fill="url(#${id}k)"/>
+        <g clip-path="url(#${id}c)">
+          <rect x="40" y="92" width="120" height="26" fill="#6a4cff"/>
+          <rect x="40" y="150" width="120" height="100" fill="#2b2d3a"/>
+          <path d="M${x-h} 152 L${x-12} 242" stroke="#6a4cff" stroke-width="3"/><path d="M${x+h} 152 L${x+12} 242" stroke="#6a4cff" stroke-width="3"/>
+          ${m === "done" ? `<path d="M${x-6} 124 v18 M${x+6} 124 v18 M${x-10} 133 h20" stroke="#c98d68" stroke-width="1.6" opacity=".8"/>` : ""}
+          ${w > 22 ? `<ellipse cx="${x}" cy="${138}" rx="${w * 0.7}" ry="${(w - 15) * 0.6}" fill="#c98d68" opacity=".35"/>` : ""}
+        </g>
+        ${donut}
+      </g>
+      ${crack}
+      ${sparkles}
+    </g>
+    <ellipse cx="100" cy="140" rx="84" ry="126" fill="none" stroke="url(#${id}g)" stroke-width="10"/>
+    <ellipse cx="100" cy="140" rx="78" ry="120" fill="none" stroke="#5a3d08" stroke-width="1.5" opacity=".5"/>
+  </svg>`;
+}
+
+/* ---------- C: photo slots ---------- */
+const CAM = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="13" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`;
+const PHOTO = { happy: "Big smile", impatient: "Side-eye", angry: "Angry face", sad: "Fake crying", done: "Flexing in the mirror" };
+
+function fillRow(elId, fn) {
+  document.getElementById(elId).innerHTML = MOODS.map(m => `<figure>${fn(m)}<figcaption>${LABEL[m]}</figcaption></figure>`).join("");
+}
+fillRow("rowA", ironKettle);
+fillRow("rowB", mirror);
+fillRow("rowC", m => `<div class="photo"><div>${CAM}<br>${PHOTO[m]}</div></div>`);
+</script>

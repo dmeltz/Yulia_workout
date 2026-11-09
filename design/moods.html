@@ -1,0 +1,331 @@
+<title>Kettle's Moods</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap">
+<style>
+/* Layout: one column. A live widget preview with a time-of-day slider at the top, then the five moods as a strip of cards. */
+:root {
+  --bg: #f3f1f8;
+  --surface: #ffffff;
+  --fg: #231f33;
+  --muted: #6b6580;
+  --line: #e0dcea;
+  --accent: #6a4cff;
+  --ink: #1d1a2b;
+  --display: "Fredoka", "Nunito", system-ui, sans-serif;
+  --body: "Nunito", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15131d; --surface: #1f1c2b; --fg: #eeebf7; --muted: #a39db8; --line: #322e44; --accent: #9b85ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15131d; --surface: #1f1c2b; --fg: #eeebf7; --muted: #a39db8; --line: #322e44; --accent: #9b85ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 56px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 700; }
+h2 { font-size: 1.45rem; font-weight: 600; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 62ch; font-size: 1.05rem; }
+header { display: flex; flex-direction: column; gap: 10px; }
+
+/* live preview */
+.live { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 32px; align-items: center; }
+@media (max-width: 720px) { .live { grid-template-columns: 1fr; justify-items: center; } }
+.phone {
+  width: 100%; max-width: 300px; aspect-ratio: 9 / 12; border-radius: 34px; padding: 22px 18px;
+  background: linear-gradient(160deg, #3b2f6e, #a04f7a 60%, #f0a868);
+  border: 8px solid #0e0c14; position: relative; display: flex; flex-direction: column; gap: 18px;
+}
+.clock { color: #fff; font-family: var(--display); font-size: 2.6rem; font-weight: 500; text-align: center; line-height: 1; font-variant-numeric: tabular-nums; }
+.widget {
+  background: rgba(255,255,255,0.92); border-radius: 26px; padding: 12px 14px 14px;
+  display: grid; grid-template-columns: 1.15fr 1fr; gap: 4px 6px; align-items: center; color: #1d1a2b;
+}
+.widget svg { width: 100%; height: auto; display: block; }
+.widget .streak { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: center; gap: 6px; }
+.widget .streak svg { width: 22px; }
+.pair { display: grid; grid-template-columns: 1.15fr 1fr; gap: 4px; align-items: center; }
+.streak { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.streak .num { font-family: var(--display); font-size: 2.6rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.streak .lbl { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6b6580; }
+.streak .say { font-size: 0.82rem; line-height: 1.3; margin-top: 6px; font-weight: 600; }
+.icons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 0 6px; }
+.icons span { aspect-ratio: 1; border-radius: 14px; background: rgba(255,255,255,0.22); }
+
+.controls { display: flex; flex-direction: column; gap: 22px; min-width: 0; width: 100%; }
+.controls label { font-weight: 700; display: block; margin-bottom: 8px; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.ticks { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.toggle {
+  display: inline-flex; align-items: center; gap: 10px; font: inherit; font-weight: 700; cursor: pointer;
+  border: 2px solid var(--accent); color: var(--accent); background: transparent; padding: 10px 18px; border-radius: 999px;
+}
+.toggle[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.toggle:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.moodname { font-family: var(--display); font-size: 1.3rem; font-weight: 600; }
+.hint { color: var(--muted); font-size: 0.92rem; }
+
+/* mood strip */
+.moods { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .moods { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .moods { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.card svg { width: 100%; max-width: 150px; height: auto; align-self: center; }
+.card .when { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
+.card h3 { font-family: var(--display); font-weight: 600; font-size: 1.1rem; margin: 0; }
+.card p { font-size: 0.88rem; color: var(--muted); }
+
+.notes { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; }
+.notes ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+
+/* character animations */
+.k-bounce { animation: bounce 0.9s ease-in-out infinite; transform-origin: 100px 200px; }
+.k-sway { animation: sway 2.4s ease-in-out infinite; transform-origin: 100px 200px; }
+.k-shake { animation: shake 0.35s linear infinite; transform-origin: 100px 200px; }
+.k-droop { animation: droop 3.2s ease-in-out infinite; transform-origin: 100px 200px; }
+.k-breathe { animation: breathe 3s ease-in-out infinite; transform-origin: 100px 200px; }
+.wave { animation: wave 1s ease-in-out infinite; transform-origin: 158px 140px; }
+.tap { animation: tap 0.5s ease-in-out infinite; transform-origin: 158px 145px; }
+.blink { animation: blink 4s infinite; transform-origin: 100px 126px; }
+.steam { animation: steam 1.4s ease-out infinite; }
+.steam.b { animation-delay: 0.7s; }
+.tear { animation: tear 1.6s ease-in infinite; }
+.tear.b { animation-delay: 0.8s; }
+.confetti rect { animation: pop 1.2s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.confetti rect:nth-child(2n) { animation-delay: 0.4s; }
+.confetti rect:nth-child(3n) { animation-delay: 0.8s; }
+.dots circle { animation: dot 1.2s infinite; }
+.dots circle:nth-child(2) { animation-delay: 0.2s; }
+.dots circle:nth-child(3) { animation-delay: 0.4s; }
+.needle { animation: needle 1.6s ease-in-out infinite; transform-origin: 50px 62px; }
+.popbtn { animation: popbtn 1.4s ease-out infinite; }
+.twinkle { animation: twinkle 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.twinkle.b { animation-delay: 0.6s; }
+.wobble { animation: sway 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+.lift { animation: liftup 1.2s ease-in-out infinite; }
+.spin { animation: spin 8s linear infinite; transform-origin: 72px 28px; }
+@keyframes needle { 0% { transform: rotate(-60deg) } 60%,100% { transform: rotate(55deg) } }
+@keyframes popbtn { 0% { transform: translate(-30px, 18px); opacity: 0 } 25% { opacity: 1 } 100% { transform: translate(0, 0); opacity: 1 } }
+@keyframes twinkle { 0%,100% { transform: scale(0.7); opacity: 0.6 } 50% { transform: scale(1.15); opacity: 1 } }
+@keyframes liftup { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+@keyframes spin { to { transform: rotate(360deg) } }
+@keyframes bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-12px) } }
+@keyframes sway { 0%,100% { transform: rotate(-2deg) } 50% { transform: rotate(2deg) } }
+@keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-3px) rotate(-1deg) } 75% { transform: translateX(3px) rotate(1deg) } }
+@keyframes droop { 0%,100% { transform: scaleY(1) } 50% { transform: scaleY(0.96) translateY(2px) } }
+@keyframes breathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.02) } }
+@keyframes wave { 0%,100% { transform: rotate(0deg) } 50% { transform: rotate(-28deg) } }
+@keyframes tap { 0%,100% { transform: rotate(0deg) } 50% { transform: rotate(14deg) } }
+@keyframes blink { 0%,94%,100% { transform: scaleY(1) } 97% { transform: scaleY(0.1) } }
+@keyframes steam { 0% { transform: translateY(0); opacity: 0.9 } 100% { transform: translateY(-26px); opacity: 0 } }
+@keyframes tear { 0% { transform: translateY(0); opacity: 1 } 100% { transform: translateY(46px); opacity: 0 } }
+@keyframes pop { 0% { transform: translateY(6px) rotate(0deg); opacity: 0 } 30% { opacity: 1 } 100% { transform: translateY(-14px) rotate(160deg); opacity: 0 } }
+@keyframes dot { 0%,100% { opacity: 0.25 } 50% { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { svg * , svg { animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Meet Kettle, your workout buddy</h1>
+    <p class="lede">Kettle lives in the widget on your home screen. Kettle starts the day friendly, then gets ruder (and rounder) the longer today's workout waits, and the picture beside Kettle makes the point without words. Work out and Kettle slims down and shows off. Drag the slider to see how Kettle looks through the day, then tap "Workout done".</p>
+  </header>
+
+  <section class="live" aria-label="Widget preview">
+    <div class="phone">
+      <div class="clock" id="clock">09:00</div>
+      <div class="widget">
+        <div id="liveChar"></div>
+        <div id="liveEmblem"></div>
+        <div class="streak" aria-label="Streak">
+          <svg viewBox="0 0 24 28" aria-hidden="true"><path d="M12 1 C14 8 21 10 21 18 A9 9 0 0 1 3 18 C3 12 7 10 7 5 C9 9 11 9 12 1Z" fill="#ff7a3d"/><path d="M12 13 C13 17 16 18 16 21 A4 4 0 0 1 8 21 C8 18 11 17 12 13Z" fill="#ffcd3c"/></svg>
+          <span class="num" id="num">12</span>
+        </div>
+      </div>
+      <div class="icons" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="controls">
+      <div>
+        <label for="time">Time of day</label>
+        <input type="range" id="time" min="360" max="1439" step="15" value="540">
+        <div class="ticks"><span>06:00</span><span>12:00</span><span>17:00</span><span>21:00</span><span>23:59</span></div>
+      </div>
+      <div><button class="toggle" id="done" aria-pressed="false" type="button">Workout done</button></div>
+      <div>
+        <div class="moodname" id="moodName"></div>
+        <p class="hint" id="moodHint"></p>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <h2>The five moods</h2>
+    <div class="moods" id="moods"></div>
+  </section>
+
+  <section class="notes">
+    <h2>Tell me what to change</h2>
+    <ul>
+      <li>The name, the look, the colours, the times each mood starts, or the pictures beside Kettle.</li>
+      <li>On the real widget the motion will be simpler, like a few frames of blinking, shaking or dripping tears. Android widgets can't play smooth animation like this page does.</li>
+      <li>The widget updates about every half hour, so Kettle changes moods at those times, not minute by minute.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const INK = "#1d1a2b";
+const MOODS = {
+  happy:   { name: "Cheerful", when: "Until 12:00", body: "#4fc3b0", dark: "#2f8f80", anim: "k-breathe", sx: 1,
+             say: "Morning! Workout first, croissant later.", hint: "Normal size. Waves hello and blinks." },
+  impatient:{ name: "Impatient", when: "12:00 – 17:00", body: "#f2b544", dark: "#c18714", anim: "k-sway", sx: 1.1,
+             say: "Still on the couch? Your jeans are getting nervous.", hint: "A little wider already. Side-eye, a raised brow and a tapping arm." },
+  angry:   { name: "Angry", when: "17:00 – 21:00", body: "#ef5a4c", dark: "#b8322a", anim: "k-shake", sx: 1.2,
+             say: "Skip today and the scale WILL notice. Move it!", hint: "Rounder, red, shaking and steaming." },
+  sad:     { name: "Heartbroken", when: "21:00 – midnight", body: "#7c8cc4", dark: "#55639a", anim: "k-droop", sx: 1.32,
+             say: "Fine, break our {n}-day streak. I'll go find you some stretchy pants.", hint: "Fully round, crying into a donut." },
+  done:    { name: "Celebrating", when: "Once you mark it done", body: "#7ccf5a", dark: "#4e9a30", anim: "k-bounce", sx: 0.88,
+             say: "Yes! {n} days in a row. You're on the road to a slim, sexy body.", hint: "Slimmed down, flexing, with confetti." }
+};
+
+function face(m, c) {
+  const eyeDot = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${INK}"/><circle cx="${x+3}" cy="${y-3}" r="${r/3}" fill="#fff"/>`;
+  const cheeks = `<ellipse cx="62" cy="150" rx="9" ry="5.5" fill="#ff8fa8" opacity=".6"/><ellipse cx="138" cy="150" rx="9" ry="5.5" fill="#ff8fa8" opacity=".6"/>`;
+  const line = (d, w = 5) => `<path d="${d}" stroke="${INK}" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const arm = (d, cls = "") => `<path class="${cls}" d="${d}" stroke="${c.dark}" stroke-width="11" fill="none" stroke-linecap="round"/>`;
+  switch (m) {
+    case "happy": return {
+      back: "",
+      arms: arm("M42 140 Q30 150 30 166") + `<g class="wave">${arm("M158 140 Q176 124 182 102")}</g>`,
+      face: `<g class="blink">${eyeDot(80,126,9)}${eyeDot(120,126,9)}</g>` + line("M82 150 Q100 168 118 150") + cheeks,
+      front: "" };
+    case "impatient": return {
+      back: `<g class="dots"><circle cx="150" cy="28" r="5" fill="${INK}"/><circle cx="166" cy="22" r="5" fill="${INK}"/><circle cx="182" cy="16" r="5" fill="${INK}"/></g>`,
+      arms: arm("M42 140 Q30 150 30 166") + `<g class="tap">${arm("M158 145 Q182 150 172 170")}</g>`,
+      face: `<circle cx="84" cy="128" r="8" fill="${INK}"/><circle cx="126" cy="128" r="8" fill="${INK}"/>` +
+            `<rect x="70" y="113" width="28" height="13" fill="${c.body}"/><rect x="112" y="113" width="28" height="13" fill="${c.body}"/>` +
+            line("M72 124 L96 124", 4) + line("M114 124 L138 124", 4) +
+            line("M70 112 L94 114") + line("M112 104 Q124 97 136 104") + line("M86 156 L116 153"),
+      front: "" };
+    case "angry": return {
+      back: `<g class="steam"><path d="M70 40 q-8 -8 0 -16 q8 -8 0 -16" stroke="#b9b4c8" stroke-width="6" fill="none" stroke-linecap="round"/></g>` +
+            `<g class="steam b"><path d="M130 40 q-8 -8 0 -16 q8 -8 0 -16" stroke="#b9b4c8" stroke-width="6" fill="none" stroke-linecap="round"/></g>`,
+      arms: arm("M42 140 L30 160") + arm("M158 140 L170 160") +
+            `<circle cx="28" cy="164" r="8" fill="${c.dark}"/><circle cx="172" cy="164" r="8" fill="${c.dark}"/>`,
+      face: line("M64 110 L94 122", 7) + line("M136 110 L106 122", 7) +
+            `<circle cx="82" cy="132" r="7" fill="${INK}"/><circle cx="118" cy="132" r="7" fill="${INK}"/>` +
+            `<path d="M80 164 Q100 146 120 164 Z" fill="${INK}"/><path d="M88 158 L112 158" stroke="#fff" stroke-width="3"/>`,
+      front: `<g transform="translate(150 86)" stroke="${INK}" stroke-width="4" fill="none" stroke-linecap="round"><path d="M-8 -4 q4 0 4 -4"/><path d="M8 -4 q-4 0 -4 -4"/><path d="M-8 4 q4 0 4 4"/><path d="M8 4 q-4 0 -4 4"/></g>` };
+    case "sad": return {
+      back: `<g transform="translate(100 18)"><path d="M0 14 L-16 -2 A8 8 0 0 1 -2 -10 L2 -2 L-3 4 Z" fill="#e2566c"/><path d="M3 15 L18 -2 A8 8 0 0 0 4 -10 L6 -2 L1 5 Z" fill="#e2566c"/></g>`,
+      arms: arm("M42 142 Q34 160 38 176") + arm("M158 142 Q166 160 162 176"),
+      face: line("M68 118 L92 108") + line("M132 118 L108 108") +
+            eyeDot(82,130,10) + eyeDot(118,130,10) +
+            `<path class="tear" d="M74 142 q-5 8 0 12 q5 -4 0 -12z" fill="#5bc6f5"/><path class="tear b" d="M126 142 q-5 8 0 12 q5 -4 0 -12z" fill="#5bc6f5"/>` +
+            line("M84 164 Q92 154 100 160 Q108 154 116 164"),
+      front: `<g transform="translate(186 176)"><circle r="15" fill="#e7a35a"/><circle r="12" fill="#ff8fc2"/><circle r="5" fill="#e7a35a"/><rect x="-6" y="-9" width="4" height="2" fill="#fff"/><rect x="3" y="5" width="4" height="2" fill="#ffd23c"/><rect x="5" y="-6" width="4" height="2" fill="#6ad1ff"/></g>` };
+    case "done": return {
+      back: `<g class="confetti"><rect x="30" y="40" width="9" height="5" fill="#ffcd3c"/><rect x="160" y="36" width="9" height="5" fill="#ff6fa1"/><rect x="50" y="18" width="8" height="5" fill="#6a4cff"/><rect x="146" y="14" width="8" height="5" fill="#4fc3b0"/><rect x="98" y="4" width="8" height="5" fill="#ff8a3d"/><rect x="18" y="80" width="8" height="5" fill="#6a4cff"/><rect x="176" y="76" width="8" height="5" fill="#ffcd3c"/></g>`,
+      arms: arm("M42 136 Q26 118 22 96") + arm("M158 136 Q174 118 178 96") + `<circle cx="30" cy="118" r="9" fill="${c.dark}"/><circle cx="170" cy="118" r="9" fill="${c.dark}"/>`,
+      face: line("M70 128 Q80 116 90 128") + line("M110 128 Q120 116 130 128") +
+            `<path d="M78 146 Q100 180 122 146 Z" fill="${INK}"/><path d="M90 160 Q100 152 110 160 Q100 170 90 160Z" fill="#ff7a8e"/>` + cheeks,
+      front: "" };
+  }
+}
+
+const PICS = {
+  happy: "Picture: a dumbbell in the morning sun.",
+  impatient: "Picture: the comfy couch and a bag of chips.",
+  angry: "Picture: the bathroom scale swinging into the red.",
+  sad: "Picture: jeans popping their button.",
+  done: "Picture: a measuring tape on a slim waist."
+};
+function emblem(m) {
+  const open = `<svg viewBox="0 0 100 100" aria-hidden="true">`;
+  switch (m) {
+    case "happy": return open +
+      `<g class="spin"><g stroke="#ffcd3c" stroke-width="4" stroke-linecap="round"><path d="M72 4v6M72 46v6M48 28h6M90 28h6M55 11l4 4M85 41l4 4M55 45l4-4M85 15l4-4"/></g></g><circle cx="72" cy="28" r="12" fill="#ffcd3c"/>` +
+      `<g class="lift" transform="rotate(-18 45 68)"><rect x="16" y="64" width="58" height="8" rx="3" fill="#8b86a0"/><rect x="14" y="50" width="11" height="36" rx="3" fill="#6a4cff"/><rect x="65" y="50" width="11" height="36" rx="3" fill="#6a4cff"/><rect x="6" y="57" width="8" height="22" rx="2" fill="#4a33c4"/><rect x="76" y="57" width="8" height="22" rx="2" fill="#4a33c4"/></g></svg>`;
+    case "impatient": return open +
+      `<rect x="12" y="34" width="76" height="32" rx="10" fill="#9c6ad8"/><rect x="8" y="58" width="84" height="22" rx="8" fill="#b48af0"/><path d="M50 60v18" stroke="#9c6ad8" stroke-width="2"/>` +
+      `<rect x="2" y="48" width="16" height="34" rx="7" fill="#8a58c8"/><rect x="82" y="48" width="16" height="34" rx="7" fill="#8a58c8"/><rect x="14" y="80" width="6" height="9" rx="2" fill="#5b3a8a"/><rect x="80" y="80" width="6" height="9" rx="2" fill="#5b3a8a"/>` +
+      `<g class="wobble"><path d="M56 36 L76 30 L80 58 L60 62 Z" fill="#ef5a4c"/><path d="M56 36 L76 30 L77 36 L57 42 Z" fill="#b8322a"/><circle cx="68" cy="48" r="5" fill="#ffcd3c"/></g><circle cx="52" cy="30" r="3" fill="#e7a35a"/><circle cx="84" cy="24" r="2.5" fill="#e7a35a"/></svg>`;
+    case "angry": return open +
+      `<rect x="12" y="28" width="76" height="64" rx="14" fill="#ece9f3" stroke="#b9b4c8" stroke-width="3"/><path d="M26 62 A24 24 0 0 1 74 62" fill="#fff" stroke="#1d1a2b" stroke-width="3"/>` +
+      `<path d="M28 60 A22 22 0 0 1 38 43" stroke="#7ccf5a" stroke-width="5" fill="none"/><path d="M62 43 A22 22 0 0 1 72 60" stroke="#ef5a4c" stroke-width="5" fill="none"/>` +
+      `<g class="needle"><path d="M50 62 L50 40" stroke="#ef5a4c" stroke-width="4" stroke-linecap="round"/></g><circle cx="50" cy="62" r="4" fill="#1d1a2b"/>` +
+      `<path d="M86 22 L86 4 M78 12 L86 4 L94 12" stroke="#ef5a4c" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    case "sad": return open +
+      `<path d="M20 30 L80 30 L86 94 L59 94 L50 56 L41 94 L14 94 Z" fill="#4a6fb5"/><rect x="20" y="28" width="60" height="10" fill="#3b5a96"/>` +
+      `<path d="M40 28 L50 50 L60 28 Z" fill="#f3c3a8"/><path d="M24 46 q6 4 12 0 M64 46 q6 4 12 0" stroke="#9fb6e3" stroke-width="2" fill="none"/>` +
+      `<g class="popbtn"><circle cx="84" cy="14" r="7" fill="#d9a441" stroke="#a77a26" stroke-width="2"/><path d="M70 26 l-5 5 M74 30 l-3 6 M66 22 l-6 2" stroke="#8b86a0" stroke-width="2.5" stroke-linecap="round"/></g></svg>`;
+    case "done": return open +
+      `<path d="M32 8 Q50 16 68 8 Q56 50 70 94 Q50 86 30 94 Q44 50 32 8Z" fill="#f3c3a8"/>` +
+      `<path d="M40 44 Q50 48 60 44 L60 54 Q50 58 40 54 Z" fill="#ffd23c"/><path d="M44 46v4M48 47v5M52 47v4M56 46v5" stroke="#a77a26" stroke-width="1.5"/><path d="M60 50 q14 6 8 22" stroke="#ffd23c" stroke-width="6" fill="none" stroke-linecap="round"/>` +
+      `<g class="twinkle"><path d="M14 22 l3 8 l8 3 l-8 3 l-3 8 l-3 -8 l-8 -3 l8 -3z" fill="#ffcd3c"/></g><g class="twinkle b"><path d="M86 28 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 l6 -2z" fill="#6a4cff"/></g>` +
+      `<path class="twinkle" d="M84 84 c-6 -8 -16 -2 -10 6 l10 10 l10 -10 c6 -8 -4 -14 -10 -6z" transform="translate(-66 -10) scale(0.9)" fill="#ff6fa1"/></svg>`;
+  }
+}
+
+function kettle(m) {
+  const c = MOODS[m], f = face(m, c);
+  return `<svg viewBox="-22 0 244 210" role="img" aria-label="Kettle, ${c.name.toLowerCase()}">
+    ${f.back}
+    <g class="${c.anim}">
+      <g transform="translate(100 0) scale(${c.sx} 1) translate(-100 0)">
+      <path d="M62 96 C56 34 144 34 138 96" stroke="${c.dark}" stroke-width="17" fill="none" stroke-linecap="round"/>
+      ${f.arms}
+      <rect x="60" y="182" width="80" height="16" rx="8" fill="${c.dark}"/>
+      <circle cx="100" cy="134" r="60" fill="${c.body}"/>
+      <ellipse cx="78" cy="102" rx="16" ry="9" fill="#fff" opacity=".28" transform="rotate(-25 78 102)"/>
+      </g>
+      ${f.face}
+      ${f.front}
+    </g>
+  </svg>`;
+}
+
+const STREAK = 12;
+function fill(s, n) { return s.replace("{n}", n); }
+document.getElementById("moods").innerHTML = Object.keys(MOODS).map(k => {
+  const c = MOODS[k];
+  return `<article class="card"><div class="pair">${kettle(k)}${emblem(k)}</div><span class="when">${c.when}</span><h3>${c.name}</h3><p>${PICS[k]}</p></article>`;
+}).join("");
+
+const time = document.getElementById("time"), doneBtn = document.getElementById("done");
+let current = "";
+function moodAt(min, done) {
+  if (done) return "done";
+  if (min < 720) return "happy";
+  if (min < 1020) return "impatient";
+  if (min < 1260) return "angry";
+  return "sad";
+}
+function render() {
+  const min = +time.value, done = doneBtn.getAttribute("aria-pressed") === "true";
+  const h = String(Math.floor(min / 60)).padStart(2, "0"), mm = String(min % 60).padStart(2, "0");
+  document.getElementById("clock").textContent = `${h}:${mm}`;
+  const m = moodAt(min, done), c = MOODS[m], n = done ? STREAK + 1 : STREAK;
+  if (m !== current) { document.getElementById("liveChar").innerHTML = kettle(m); document.getElementById("liveEmblem").innerHTML = emblem(m); current = m; }
+  document.getElementById("num").textContent = n;
+  document.getElementById("moodName").textContent = `${c.name} · ${c.when}`;
+  document.getElementById("moodHint").textContent = `${c.hint} ${PICS[m]}`;
+}
+time.addEventListener("input", render);
+doneBtn.addEventListener("click", () => {
+  doneBtn.setAttribute("aria-pressed", doneBtn.getAttribute("aria-pressed") === "true" ? "false" : "true");
+  render();
+});
+render();
+</script>
