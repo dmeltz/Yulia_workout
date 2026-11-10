@@ -24,7 +24,7 @@ jobs:
       - name: Build the APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace -PbuildNumber=${{ github.run_number }}
           cp app/build/outputs/apk/release/app-release.apk YuliaWorkout.apk
 
       - uses: actions/upload-artifact@v4
