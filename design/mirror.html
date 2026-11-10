@@ -120,7 +120,7 @@ const INFO = {
   impatient: { name: "Afternoon", when: "12:00 – 17:00", hint: "Hands on hips and a side-eye. A little softer around the middle already." },
   angry:     { name: "Evening", when: "17:00 – 21:00", hint: "Furious and flushed, fists clenched, with a muffin top over the leggings." },
   sad:       { name: "Late night", when: "21:00 – midnight", hint: "Fully rounded, slumped and crying, and the mirror cracks." },
-  done:      { name: "Workout done", when: "Once you mark it", hint: "Slim waist, toned abs, flexing and winking, with sparkles." }
+  done:      { name: "Workout done", when: "Once you mark it", hint: "Slim waist, toned abs, flexing and smiling, with sparkles." }
 };
 // w waist, h hips, kr thigh, c bust/ribcage, a arm, fc face half-width (all half-widths, in drawing units)
 const BODY = {
@@ -262,9 +262,7 @@ function mirror(m) {
       <path d="M${ex - 3.6} ${eyeY + .1} Q${ex} ${eyeY - 3} ${ex + 3.6} ${eyeY - .3}" stroke="#2a160c" stroke-width=".9" fill="none" stroke-linecap="round"/>
       <path d="M${ex - 2.6} ${eyeY - 2.4} Q${ex} ${eyeY - 3.6} ${ex + 2.8} ${eyeY - 2.5}" stroke="#c48a6a" stroke-width=".4" fill="none" opacity=".7"/></g>`;
   const eL = hx - 5.4, eR = hx + 5.4;
-  const eyes = m === "done"
-    ? eye(eL) + `<path d="M${eR - 3.2} ${eyeY} Q${eR} ${eyeY - 2.6} ${eR + 3.2} ${eyeY}" stroke="#2a160c" stroke-width="1.1" fill="none" stroke-linecap="round"/>`
-    : eye(eL) + eye(eR);
+  const eyes = eye(eL) + eye(eR);
   const brows = {
     happy: `M${eL - 3.6} ${hy - 4.2} Q${eL} ${hy - 6.2} ${eL + 3.4} ${hy - 4.8} M${eR - 3.4} ${hy - 4.8} Q${eR} ${hy - 6.2} ${eR + 3.6} ${hy - 4.2}`,
     impatient: `M${eL - 3.6} ${hy - 4.6} L${eL + 3.4} ${hy - 4.6} M${eR - 3.4} ${hy - 5.4} Q${eR} ${hy - 8.4} ${eR + 3.6} ${hy - 6}`,
@@ -277,7 +275,7 @@ function mirror(m) {
     impatient: `<path d="M${hx - 3.4} ${mouthY + .8} Q${hx} ${mouthY - .2} ${hx + 3.4} ${mouthY + .2} Q${hx} ${mouthY + 1.8} ${hx - 3.4} ${mouthY + .8}Z" fill="#c25468"/>`,
     angry: `<path d="M${hx - 4} ${mouthY + 1.6} Q${hx} ${mouthY - 1.6} ${hx + 4} ${mouthY + 1.6} Q${hx} ${mouthY + .4} ${hx - 4} ${mouthY + 1.6}Z" fill="#7a2030"/><path d="M${hx - 2.8} ${mouthY + .5} L${hx + 2.8} ${mouthY + .5}" stroke="#fff" stroke-width=".8"/>`,
     sad: `<path d="M${hx - 3.8} ${mouthY + 2} Q${hx} ${mouthY - .8} ${hx + 3.8} ${mouthY + 2} Q${hx} ${mouthY + .8} ${hx - 3.8} ${mouthY + 2}Z" fill="#b04a5e"/>`,
-    done: `<path d="M${hx - 4.6} ${mouthY - .4} Q${hx} ${mouthY + 4.6} ${hx + 4.6} ${mouthY - .4} Q${hx} ${mouthY + .4} ${hx - 4.6} ${mouthY - .4}Z" fill="#7a2030"/><path d="M${hx - 3.8} ${mouthY - .1} Q${hx} ${mouthY + 1.5} ${hx + 3.8} ${mouthY - .1} Q${hx} ${mouthY + .5} ${hx - 3.8} ${mouthY - .1}Z" fill="#fff"/>`
+    done: `<path d="M${hx - 5.6} ${mouthY - 1} Q${hx} ${mouthY + 5.8} ${hx + 5.6} ${mouthY - 1} Q${hx} ${mouthY + .2} ${hx - 5.6} ${mouthY - 1}Z" fill="#7a2030"/><path d="M${hx - 4.8} ${mouthY - .6} Q${hx} ${mouthY + 1.6} ${hx + 4.8} ${mouthY - .6} Q${hx} ${mouthY + .3} ${hx - 4.8} ${mouthY - .6}Z" fill="#fff"/><path d="M${hx - 6.4} ${mouthY - 1.6} q.6 .4 .9 1.1 M${hx + 6.4} ${mouthY - 1.6} q-.6 .4 -.9 1.1" stroke="#c48a6a" stroke-width=".5" fill="none"/>`
   }[m];
   const blush = m === "angry" ? ["#ff4a3a", .5] : ["#ff8f9a", .28];
   const tears = sad ? `<path class="drip" d="M${eL - 1} ${eyeY + 2.4} q-1.3 2.6 0 3.4 q1.3 -.8 0 -3.4z" fill="#8fd8ff" stroke="#5bb6e8" stroke-width=".3"/><path class="drip" style="animation-delay:.9s" d="M${eR + 1} ${eyeY + 2.4} q-1.3 2.6 0 3.4 q1.3 -.8 0 -3.4z" fill="#8fd8ff" stroke="#5bb6e8" stroke-width=".3"/>` : "";
