@@ -11,8 +11,10 @@ android {
         applicationId = "com.yulia.workout"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // CI passes -PbuildNumber=<run number>; releases are tagged build-<same number>.
+        val buildNumber = (project.findProperty("buildNumber") as String?)?.toIntOrNull() ?: 1
+        versionCode = buildNumber
+        versionName = "1.$buildNumber"
     }
 
     // One fixed key, so a newer APK installs over the old one and keeps the streak.
@@ -42,4 +44,11 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    buildFeatures {
+        buildConfig = true
+    }
+}
+
+dependencies {
+    implementation("androidx.core:core:1.13.1")
 }
