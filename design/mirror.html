@@ -79,7 +79,7 @@ figcaption span { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; 
 <div class="wrap">
   <header style="display:flex;flex-direction:column;gap:10px">
     <h1>The Mirror</h1>
-    <p class="lede">The mirror on your home screen shows how the day is going. Skip the workout and the reflection gets softer around the middle, grabs a donut, and finally cracks the glass. Do the workout and you're slim, toned and flexing. Drag the slider to watch it change.</p>
+    <p class="lede">The mirror on your home screen shows how the day is going. Skip the workout and the reflection gets softer around the middle, angrier, and finally cracks the glass. Do the workout and you're slim, toned and flexing. Drag the slider to watch it change.</p>
   </header>
 
   <section class="live" aria-label="Widget preview">
@@ -118,248 +118,251 @@ const MOODS = ["happy", "impatient", "angry", "sad", "done"];
 const INFO = {
   happy:     { name: "Morning", when: "Until 12:00", hint: "Relaxed and smiling, in warm morning light." },
   impatient: { name: "Afternoon", when: "12:00 – 17:00", hint: "Hands on hips and a side-eye. A little softer around the middle already." },
-  angry:     { name: "Evening", when: "17:00 – 21:00", hint: "Furious, flushed and holding a donut. Muffin top over the leggings." },
-  sad:       { name: "Late night", when: "21:00 – midnight", hint: "Crying into the donut, fully rounded, and the mirror cracks." },
-  done:      { name: "Workout done", when: "Once you mark it", hint: "Slim waist, visible abs, flexing, with sparkles." }
+  angry:     { name: "Evening", when: "17:00 – 21:00", hint: "Furious and flushed, fists clenched, with a muffin top over the leggings." },
+  sad:       { name: "Late night", when: "21:00 – midnight", hint: "Fully rounded, slumped and crying, and the mirror cracks." },
+  done:      { name: "Workout done", when: "Once you mark it", hint: "Slim waist, toned abs, flexing and smiling, with sparkles." }
 };
+// w waist, h hips, kr thigh, c bust/ribcage, a arm, fc face half-width (all half-widths, in drawing units)
 const BODY = {
-  done:      { w: 14, h: 27, a: 4.6, t: 10.5, fc: 12.6 },
-  happy:     { w: 17.5, h: 29, a: 5, t: 11.5, fc: 13 },
-  impatient: { w: 22, h: 32.5, a: 5.6, t: 13.5, fc: 13.8 },
-  angry:     { w: 28, h: 37, a: 6.4, t: 15.5, fc: 14.8 },
-  sad:       { w: 34, h: 42, a: 7.2, t: 17.5, fc: 15.8 }
+  done:      { w: 13.2, h: 24.5, kr: 7.4, c: 18.6, a: 4.2, fc: 11.2 },
+  happy:     { w: 15.6, h: 26.2, kr: 8.2, c: 19.4, a: 4.5, fc: 11.4 },
+  impatient: { w: 19.5, h: 28.8, kr: 9.4, c: 20.6, a: 5.0, fc: 11.9 },
+  angry:     { w: 24.5, h: 32.5, kr: 11.0, c: 22.4, a: 5.7, fc: 12.6 },
+  sad:       { w: 30, h: 36.5, kr: 12.6, c: 24.4, a: 6.4, fc: 13.4 }
 };
 let uid = 0;
+const SKIN = "#eebb9b", SKIN_LIGHT = "#f8d5bd", SHADE = "#a9694c", LINE = "#9c5f45";
 
-function donut(x, y, r, id) {
-  return `<g transform="translate(${x} ${y})">
-    <circle r="${r}" fill="url(#${id}dough)"/>
-    <path d="M${-r*0.9} ${-r*0.1} C${-r*0.9} ${-r*0.8} ${r*0.9} ${-r*0.8} ${r*0.9} ${-r*0.1} C${r*0.8} ${r*0.25} ${r*0.6} ${r*0.05} ${r*0.5} ${r*0.4} C${r*0.3} ${r*0.15} ${r*0.1} ${r*0.55} ${-r*0.1} ${r*0.3} C${-r*0.35} ${r*0.6} ${-r*0.5} ${r*0.1} ${-r*0.7} ${r*0.35} C${-r*0.85} ${r*0.2} ${-r*0.9} ${r*0.1} ${-r*0.9} ${-r*0.1}Z" fill="url(#${id}icing)"/>
-    <circle r="${r*0.32}" fill="#8a5528"/>
-    <g stroke-width="${r*0.13}" stroke-linecap="round"><path d="M${-r*0.5} ${-r*0.45} l${r*0.18} ${r*0.05}" stroke="#fff"/><path d="M${r*0.4} ${-r*0.5} l${r*0.1} ${r*0.15}" stroke="#ffd23c"/><path d="M${r*0.55} ${-r*0.05} l${r*0.05} ${r*0.18}" stroke="#6ad1ff"/><path d="M${-r*0.65} ${-r*0.05} l${r*0.15} ${-r*0.1}" stroke="#7ccf5a"/><path d="M${-r*0.1} ${-r*0.62} l${r*0.18} 0" stroke="#6ad1ff"/></g>
-    <ellipse cx="${-r*0.35}" cy="${-r*0.55}" rx="${r*0.25}" ry="${r*0.1}" fill="#fff" opacity=".5" transform="rotate(-20 ${-r*0.35} ${-r*0.55})"/>
-  </g>`;
+/* Smooth curve through points (Catmull-Rom turned into cubic Béziers). */
+function smooth(pts, move = true) {
+  let d = move ? `M${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}` : `L${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ` C${c1[0].toFixed(2)} ${c1[1].toFixed(2)} ${c2[0].toFixed(2)} ${c2[1].toFixed(2)} ${p2[0].toFixed(2)} ${p2[1].toFixed(2)}`;
+  }
+  return d;
+}
+
+/* A limb: a smooth tube through [x, y, radius] points, with rounded ends. */
+function limb(pts) {
+  const cr = (p0, p1, p2, p3, t) => {
+    const t2 = t * t, t3 = t2 * t;
+    return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+  };
+  const samples = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    for (let k = 0; k < 10; k++) {
+      const t = k / 10;
+      samples.push([cr(p0[0], p1[0], p2[0], p3[0], t), cr(p0[1], p1[1], p2[1], p3[1], t), p1[2] + (p2[2] - p1[2]) * t]);
+    }
+  }
+  samples.push(pts[pts.length - 1]);
+  const L = [], R = [];
+  samples.forEach((p, i) => {
+    const a = samples[Math.max(0, i - 1)], b = samples[Math.min(samples.length - 1, i + 1)];
+    const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
+    L.push([p[0] + nx * p[2], p[1] + ny * p[2]]); R.push([p[0] - nx * p[2], p[1] - ny * p[2]]);
+  });
+  const end = samples[samples.length - 1], start = samples[0];
+  let d = `M${L[0][0].toFixed(2)} ${L[0][1].toFixed(2)}`;
+  L.slice(1).forEach(p => d += ` L${p[0].toFixed(2)} ${p[1].toFixed(2)}`);
+  const re = R[R.length - 1];
+  d += ` A${end[2]} ${end[2]} 0 0 0 ${re[0].toFixed(2)} ${re[1].toFixed(2)}`;
+  R.slice(0, -1).reverse().forEach(p => d += ` L${p[0].toFixed(2)} ${p[1].toFixed(2)}`);
+  d += ` A${start[2]} ${start[2]} 0 0 0 ${L[0][0].toFixed(2)} ${L[0][1].toFixed(2)}Z`;
+  return d;
 }
 
 function mirror(m) {
   const id = "r" + (uid++), B = BODY[m], X = 100;
-  const { w, h, a, t, fc } = B;
-  const fat = (w - 14);
-  const s = 25 + fat * 0.18, c = 20.5 + fat * 0.42;
-  const kr = 8.5 + (t - 10.5) * 0.55;
-  const legC = 10.5;
-  const innerK = Math.min(X - legC + kr, X - 0.8);
-  const L = (dx) => X - dx, R = (dx) => X + dx;
-  // left half going down, then right half up
-  const half = (sgn) => {
-    const P = (dx) => X + sgn * dx;
-    return { P };
-  };
-  const body = `M${L(5)} 56 L${L(5.5)} 80
-    C${L(11)} 84 ${L(s-4)} 84 ${L(s)} 89
-    C${L(s+1.5)} 95 ${L(c)} 97 ${L(c)} 104
-    C${L(c)} 114 ${L(w+1.5)} 124 ${L(w)} 136
-    C${L(w)} 148 ${L(h)} 152 ${L(h)} 168
-    C${L(h)} 184 ${L(legC+kr+1.5)} 212 ${L(legC+kr)} 238
-    C${L(legC+kr-1)} 258 ${L(legC+5.5)} 276 ${L(legC+4.6)} 292
-    L${L(legC-4.2)} 292
-    C${L(legC-4.8)} 272 ${2*X-innerK > X ? innerK : innerK} 258 ${innerK} 238
-    C${Math.min(innerK+0.5, X-0.5)} 214 ${L(1)} 200 ${X} 196
-    C${R(1)} 200 ${2*X-Math.min(innerK+0.5, X-0.5)} 214 ${2*X-innerK} 238
-    C${2*X-innerK} 258 ${R(legC-4.8)} 272 ${R(legC-4.2)} 292
-    L${R(legC+4.6)} 292
-    C${R(legC+5.5)} 276 ${R(legC+kr-1)} 258 ${R(legC+kr)} 238
-    C${R(legC+kr+1.5)} 212 ${R(h)} 184 ${R(h)} 168
-    C${R(h)} 152 ${R(w)} 148 ${R(w)} 136
-    C${R(w+1.5)} 124 ${R(c)} 114 ${R(c)} 104
-    C${R(c)} 97 ${R(s+1.5)} 95 ${R(s)} 89
-    C${R(s-4)} 84 ${R(11)} 84 ${R(5.5)} 80
-    L${R(5)} 56 Z`;
+  const { w, h, kr, c, a, fc } = B;
+  const fat = w - 13.2;
+  const sad = m === "sad";
+  let n = 0; const nid = () => `${id}_${n++}`;
 
-  // arms
+  /* Volume: base fill, soft inner shadow along the edge, thin outline. */
+  const vol = (d, fill, opts = {}) => {
+    const cid = nid(), sw = opts.shadow ?? 5, so = opts.so ?? 0.55;
+    return `<clipPath id="${cid}"><path d="${d}"/></clipPath>
+      <path d="${d}" fill="${fill}"/>
+      <g clip-path="url(#${cid})"><path d="${d}" fill="none" stroke="${opts.shade || SHADE}" stroke-width="${sw}" opacity="${so}" filter="url(#${id}blur)"/>${opts.inner || ""}</g>
+      <path d="${d}" fill="none" stroke="${opts.line || LINE}" stroke-width="${opts.lw ?? 0.5}" opacity="${opts.lo ?? 0.55}"/>`;
+  };
+
+  /* ---------- torso and legs as one silhouette ---------- */
+  const s = 21.5 + fat * 0.22 - (sad ? 1 : 0);
+  const wb = w + (h - w) * 0.3 + fat * 0.12;   // waistband
+  const legC = 9.6;
+  const outer = [
+    [5.2 + fat * 0.06, 54], [5.6 + fat * 0.07, 66], [12, 71.5], [s, 76.5 + (sad ? 1.5 : 0)], [s + 0.6, 84], [c, 92], [c, 100],
+    [c - 1.2, 107], [w, 123], [wb, 135], [h, 151], [h - 1, 165],
+    [legC + kr + 1.2, 190], [legC + kr - 1.2, 214], [legC + kr * 0.92, 234], [legC + 4.6, 262], [legC + 3.1, 281]
+  ];
+  const inner = [
+    [legC - 3.1, 281], [legC - 3.9, 262], [Math.max(legC - kr * 0.5, 1.4), 238], [Math.max(legC - kr * 0.72, 1.0), 214],
+    [Math.max(legC - kr * 1.0, 0.5), 192], [0, 176]
+  ];
+  const Lp = p => [X - p[0], p[1]], Rp = p => [X + p[0], p[1]];
+  const leftSide = smooth(outer.map(Lp)) + " " + smooth(inner.map(Lp), false).replace(/^L/, "L");
+  const rightSide = smooth(inner.slice().reverse().map(Rp), false) + " " + smooth(outer.slice().reverse().map(Rp), false);
+  const body = leftSide + " " + rightSide + " Z";
+
+  /* ---------- arms ---------- */
   const out = fat * 0.5;
-  const sh = (sgn) => [X + sgn * (s - 3.5), 92];
+  const shoulder = sgn => [X + sgn * (s - 4), 80.5 + (sad ? 1.5 : 0)];
   const poses = {
-    down: (sgn) => [[X + sgn * (s + 2.5 + out), 124], [X + sgn * (s + 1 + out * 1.1), 154]],
-    hip:  (sgn) => [[X + sgn * (s + 17 + out), 118], [X + sgn * (w + 2.5), 140]],
-    flex: (sgn) => [[X + sgn * (s + 22), 96], [X + sgn * (s + 19), 70]],
-    holdDonut: (sgn) => [[X + sgn * (s + 8 + out), 126], [X + sgn * (s + 2 + out), 150]],
-    toMouth: (sgn) => [[X + sgn * (s + 8 + out), 126], [X + sgn * 21, 96]]
+    down:  sgn => [[X + sgn * Math.max(s + 1.5 + out * 0.8, w + 7), 121], [X + sgn * Math.max(s + 0.5 + out, h + 2.2), 163]],
+    hip:   sgn => [[X + sgn * (s + 15 + out), 110], [X + sgn * (wb + 2), 136]],
+    flex:  sgn => [[X + sgn * (s + 21), 84], [X + sgn * (s + 18), 57]]
   };
-  const armSet = { happy: ["down", "down"], impatient: ["hip", "hip"], angry: ["hip", "holdDonut"], sad: ["down", "toMouth"], done: ["flex", "flex"] }[m];
-  const seg = (x1, y1, r1, x2, y2, r2) => {
-    const dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
-    return `M${x1 + nx * r1} ${y1 + ny * r1} L${x2 + nx * r2} ${y2 + ny * r2} L${x2 - nx * r2} ${y2 - ny * r2} L${x1 - nx * r1} ${y1 - ny * r1}Z`;
-  };
-  const circ = (x, y, r) => `M${x - r} ${y} a${r} ${r} 0 1 0 ${2 * r} 0 a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
-  const arm = (pose, sgn) => {
-    const [sx, sy] = sh(sgn), [[ex, ey], [wx, wy]] = poses[pose](sgn);
-    const rS = a * 1.5, rE = a * 1.02, rW = a * 0.72;
-    // hand: points along the forearm, thumb toward the body
-    const fx = wx - ex, fy2 = wy - ey, fl = Math.hypot(fx, fy2) || 1, ux = fx / fl, uy = fy2 / fl;
-    const hx = wx + ux * a * 0.95, hy = wy + uy * a * 0.95, ang = Math.atan2(uy, ux) * 180 / Math.PI - 90;
-    const fist = pose === "flex";
-    const nx = -uy, ny = ux;
-    const t = (nx * (X - wx)) >= 0 ? 1 : -1; // thumb toward the body midline
-    const P = (bx, by, du, dn) => [bx + ux * du + nx * dn, by + uy * du + ny * dn];
-    let hand = "", handLines = "";
-    if (!fist) {
-      const Lp = a * 1.6, [kx, ky] = P(wx, wy, Lp, 0);
-      hand += seg(wx, wy, rW * 1.05, kx, ky, a * 0.9) + circ(kx, ky, a * 0.9);
-      const offs = [0.66, 0.22, -0.22, -0.66], lens = [1.05, 1.25, 1.18, 0.9], rads = [0.27, 0.28, 0.27, 0.23];
-      offs.forEach((o, i) => {
-        const [bx, by] = P(kx, ky, -a * 0.1, t * o * a);
-        const L = lens[i] * a * 1.95, spread = t * o * 0.12;
-        const mx = bx + (ux + nx * spread) * L * 0.55, my = by + (uy + ny * spread) * L * 0.55;
-        const tx = mx + (ux + nx * spread - nx * t * 0.08) * L * 0.45, ty = my + (uy + ny * spread - ny * t * 0.08) * L * 0.45;
-        const r = rads[i] * a;
-        hand += seg(bx, by, r * 1.05, mx, my, r) + seg(mx, my, r, tx, ty, r * 0.9) + circ(mx, my, r) + circ(tx, ty, r * 0.9);
-        handLines += `<path d="M${mx - nx * r * 0.7} ${my - ny * r * 0.7} L${mx + nx * r * 0.7} ${my + ny * r * 0.7}" stroke="#c48766" stroke-width=".35" opacity=".8"/>`;
-        handLines += `<ellipse cx="${tx - ux * r * 0.35}" cy="${ty - uy * r * 0.35}" rx="${r * 0.55}" ry="${r * 0.7}" fill="#f7d6c0" transform="rotate(${ang} ${tx - ux * r * 0.35} ${ty - uy * r * 0.35})"/>`;
-      });
-      const [b1x, b1y] = P(wx, wy, a * 0.35, t * a * 0.75);
-      const [m1x, m1y] = P(b1x, b1y, a * 0.75, t * a * 0.35);
-      const [t1x, t1y] = P(m1x, m1y, a * 0.6, t * a * 0.05);
-      hand += seg(b1x, b1y, a * 0.36, m1x, m1y, a * 0.29) + seg(m1x, m1y, a * 0.29, t1x, t1y, a * 0.26) + circ(m1x, m1y, a * 0.29) + circ(t1x, t1y, a * 0.26);
-      handLines += `<path d="M${b1x} ${b1y} Q${kx - nx * t * a * 0.1} ${ky - ny * t * a * 0.1} ${kx + ux * a * 0.1 - nx * t * a * 0.6} ${ky + uy * a * 0.1 - ny * t * a * 0.6}" stroke="#c48766" stroke-width=".4" fill="none" opacity=".6"/>`;
-    } else {
-      const [kx, ky] = P(wx, wy, a * 1.15, 0);
-      hand += seg(wx, wy, rW * 1.05, kx, ky, a * 0.95) + circ(kx, ky, a * 0.95);
-      [0.66, 0.22, -0.22, -0.66].forEach(o => { const [bx, by] = P(kx, ky, a * 0.15, t * o * a); hand += circ(bx, by, a * 0.3); });
-      [0.44, 0, -0.44].forEach(o => { const [bx, by] = P(kx, ky, a * 0.05, t * o * a); handLines += `<path d="M${bx} ${by} L${bx + ux * a * 0.45} ${by + uy * a * 0.45}" stroke="#c48766" stroke-width=".4"/>`; });
-      const [b1x, b1y] = P(wx, wy, a * 0.5, t * a * 0.8), [t1x, t1y] = P(kx, ky, -a * 0.15, -t * a * 0.05);
-      handLines += `<path d="${seg(b1x, b1y, a * 0.32, t1x, t1y, a * 0.27) + circ(t1x, t1y, a * 0.27)}" fill="#f0c3a3" stroke="#b77b5a" stroke-width=".5"/>`;
-    }
-    const handShape = `<path d="${hand}"/>`;
-    const fingers = handLines;
-    const shape = seg(sx, sy, rS, ex, ey, rE) + seg(ex, ey, rE, wx, wy, rW) + circ(sx, sy, rS) + circ(ex, ey, rE) + circ(wx, wy, rW);
-    const bicep = fist ? `<ellipse cx="${sx + (ex - sx) * 0.55}" cy="${sy + (ey - sy) * 0.55 - a * 0.75}" rx="${a * 1.25}" ry="${a * 0.95}"/>` : "";
-    const hl = `<path d="M${sx + (ex - sx) * 0.15 - sgn * 1} ${sy + (ey - sy) * 0.15} L${sx + (ex - sx) * 0.8 - sgn * 0.6} ${sy + (ey - sy) * 0.8}" stroke="#fbe0cb" stroke-width="${a * 0.45}" stroke-linecap="round" opacity=".22"/>`;
-    const crease = `<path d="M${ex - sgn * rE * 0.3} ${ey - rE * 0.2} q${sgn * rE * 0.4} ${rE * 0.3} ${sgn * rE * 0.8} 0" stroke="#c48766" stroke-width=".6" fill="none" opacity=".7"/>`;
-    return `<g stroke="#b77b5a" stroke-width="1.5" stroke-linejoin="round" fill="#b77b5a"><path d="${shape}"/>${bicep}</g><g stroke="#b77b5a" stroke-width="1" stroke-linejoin="round" fill="#b77b5a">${handShape}</g>
-      <g fill="url(#${id}skinR)"><path d="${shape}" fill="#eebb98"/>${bicep}</g>
-      <g fill="#f0c3a3">${handShape}</g>${fingers}${hl}${crease}`;
-  };
-  const back = [], front = [];
-  armSet.forEach((p, i) => { const sgn = i === 0 ? -1 : 1; front.push(arm(p, sgn)); });
-  let donutSvg = "";
-  if (m === "angry") { const [, [wx, wy]] = poses.holdDonut(1); donutSvg = donut(wx + 4, wy + 2, 10, id); }
-  if (m === "sad") { donutSvg = donut(X + 13, 76, 8.5, id); }
+  const armSet = { happy: ["down", false], impatient: ["hip", false], angry: ["down", true], sad: ["down", false], done: ["flex", true] }[m];
 
-  // face
-  const fy = 46, eyeY = 46, mouthY = 57.5;
-  const look = m === "impatient" ? 1.4 : 0;
-  const eye = (ex) => `<g class="blink"><path d="M${ex-3.8} ${eyeY} Q${ex} ${eyeY-3} ${ex+3.8} ${eyeY} Q${ex} ${eyeY+2.4} ${ex-3.8} ${eyeY}Z" fill="#fff"/>
-     <circle cx="${ex+look}" cy="${eyeY}" r="1.9" fill="#5a3a22"/><circle cx="${ex+look}" cy="${eyeY}" r=".9" fill="#120a06"/><circle cx="${ex+look+.6}" cy="${eyeY-.7}" r=".45" fill="#fff"/>
-     <path d="M${ex-4.2} ${eyeY+.2} Q${ex} ${eyeY-3.4} ${ex+4.2} ${eyeY-.4}" stroke="#2a1a10" stroke-width="1" fill="none" stroke-linecap="round"/></g>`;
-  const eyes = m === "done"
-    ? `${eye(X - 6.5)}<path d="M${X+2.8} ${eyeY} Q${X+6.5} ${eyeY-3} ${X+10.2} ${eyeY}" stroke="#2a1a10" stroke-width="1.2" fill="none" stroke-linecap="round"/>`
-    : eye(X - 6.5) + eye(X + 6.5);
+  const handPath = (L, W, fist) => {
+    // local space: wrist at 0,0, fingers toward +y, thumb toward +x
+    if (fist) return `M${-W*0.5} 0 C${-W*0.62} ${L*0.18} ${-W*0.6} ${L*0.42} ${-W*0.46} ${L*0.52} C${-W*0.3} ${L*0.62} ${W*0.2} ${L*0.62} ${W*0.4} ${L*0.5} C${W*0.62} ${L*0.4} ${W*0.66} ${L*0.18} ${W*0.5} 0Z`;
+    return `M${-W*0.5} 0 C${-W*0.6} ${L*0.25} ${-W*0.58} ${L*0.55} ${-W*0.46} ${L*0.8} C${-W*0.4} ${L*0.94} ${-W*0.24} ${L*1.0} ${-W*0.06} ${L*1.0}
+      C${W*0.16} ${L*1.0} ${W*0.34} ${L*0.94} ${W*0.38} ${L*0.78} L${W*0.4} ${L*0.56}
+      C${W*0.58} ${L*0.52} ${W*0.72} ${L*0.38} ${W*0.66} ${L*0.26} C${W*0.6} ${L*0.14} ${W*0.52} ${L*0.06} ${W*0.5} 0Z`;
+  };
+  const handDetail = (L, W, fist) => fist
+    ? `<path d="M${-W*0.28} ${L*0.42} q${W*0.1} ${L*0.12} ${W*0.24} 0 M${W*0.0} ${L*0.44} q${W*0.12} ${L*0.12} ${W*0.24} 0 M${-W*0.2} ${L*0.2} C${0} ${L*0.32} ${W*0.3} ${L*0.32} ${W*0.5} ${L*0.12}" stroke="${LINE}" stroke-width=".45" fill="none" opacity=".7"/>`
+    : `<path d="M${-W*0.24} ${L*0.62} L${-W*0.24} ${L*0.95} M${-W*0.02} ${L*0.6} L${-W*0.02} ${L*0.99} M${W*0.18} ${L*0.6} L${W*0.18} ${L*0.94} M${W*0.4} ${L*0.56} C${W*0.2} ${L*0.48} ${W*0.24} ${L*0.32} ${W*0.5} ${L*0.24}" stroke="${LINE}" stroke-width=".4" fill="none" opacity=".6"/>`;
+
+  const arm = (pose, fist, sgn) => {
+    const [sx, sy] = shoulder(sgn), [[ex, ey], [wx, wy]] = poses[pose](sgn);
+    const mid = (p, q, t, bulge) => [p[0] + (q[0] - p[0]) * t + bulge, p[1] + (q[1] - p[1]) * t];
+    const up = mid([sx, sy], [ex, ey], 0.45, sgn * 0.6), fo = mid([ex, ey], [wx, wy], 0.4, sgn * 0.3);
+    const d = limb([[sx, sy, a * 1.45], [up[0] + (pose === "flex" ? 0 : 0), up[1] - (pose === "flex" ? a * 0.35 : 0), a * (pose === "flex" ? 1.4 : 1.1)], [ex, ey, a * 0.8], [fo[0], fo[1], a * 0.84], [wx, wy, a * 0.58]]);
+    const ux = wx - ex, uy = wy - ey, ang = Math.atan2(uy, ux) * 180 / Math.PI - 90;
+    const HL = 18.5 + fat * 0.12, HW = 8.2 + fat * 0.1;
+    const hp = handPath(HL, HW, fist);
+    const bicep = "";
+    return [`${vol(d, SKIN, { shadow: a * 0.9, so: 0.5 })}${bicep}`, `
+      <g transform="translate(${wx - (ux / Math.hypot(ux, uy)) * 1.2} ${wy - (uy / Math.hypot(ux, uy)) * 1.2}) rotate(${ang}) scale(${-sgn} 1)">
+        ${vol(hp, SKIN, { shadow: 2.4, so: 0.45 })}${handDetail(HL, HW, fist)}
+      </g>`];
+  };
+  const armParts = [-1, 1].map(sgn => arm(armSet[0], armSet[1], sgn));
+  const arms = armParts.map(x => x[0]).join(""), hands = armParts.map(x => x[1]).join("");
+
+  /* ---------- face ---------- */
+  const hy = sad ? 46 : 44, hx = X + (sad ? -0.6 : 0);
+  const fh = 15 + fat * 0.05, jaw = fat * 0.12;
+  const face = `M${hx - fc} ${hy - 2} C${hx - fc} ${hy - fh}, ${hx + fc} ${hy - fh}, ${hx + fc} ${hy - 2}
+    C${hx + fc} ${hy + 6 + jaw}, ${hx + 5 + jaw} ${hy + fh}, ${hx} ${hy + fh} C${hx - 5 - jaw} ${hy + fh}, ${hx - fc} ${hy + 6 + jaw}, ${hx - fc} ${hy - 2}Z`;
+  const eyeY = hy, mouthY = hy + 9.2;
+  const look = m === "impatient" ? 1.1 : 0;
+  const eye = ex => `<g class="blink">
+      <path d="M${ex - 3.3} ${eyeY} Q${ex} ${eyeY - 2.6} ${ex + 3.3} ${eyeY} Q${ex} ${eyeY + 2} ${ex - 3.3} ${eyeY}Z" fill="#fbf7f4"/>
+      <circle cx="${ex + look}" cy="${eyeY}" r="1.55" fill="#6b4226"/><circle cx="${ex + look}" cy="${eyeY}" r=".75" fill="#140b06"/>
+      <circle cx="${ex + look + .5}" cy="${eyeY - .6}" r=".38" fill="#fff"/>
+      <path d="M${ex - 3.6} ${eyeY + .1} Q${ex} ${eyeY - 3} ${ex + 3.6} ${eyeY - .3}" stroke="#2a160c" stroke-width=".9" fill="none" stroke-linecap="round"/>
+      <path d="M${ex - 2.6} ${eyeY - 2.4} Q${ex} ${eyeY - 3.6} ${ex + 2.8} ${eyeY - 2.5}" stroke="#c48a6a" stroke-width=".4" fill="none" opacity=".7"/></g>`;
+  const eL = hx - 5.4, eR = hx + 5.4;
+  const eyes = eye(eL) + eye(eR);
   const brows = {
-    happy: `M${X-10} 41 Q${X-6.5} 39 ${X-3} 40.5 M${X+3} 40.5 Q${X+6.5} 39 ${X+10} 41`,
-    impatient: `M${X-10} 41.5 L${X-3} 41.5 M${X+3} 40 Q${X+6.5} 36.5 ${X+10} 39`,
-    angry: `M${X-10} 39.5 L${X-3} 43 M${X+10} 39.5 L${X+3} 43`,
-    sad: `M${X-10} 42.5 L${X-3} 39.5 M${X+10} 42.5 L${X+3} 39.5`,
-    done: `M${X-10} 40.5 Q${X-6.5} 38.5 ${X-3} 40 M${X+3} 40 Q${X+6.5} 38.5 ${X+10} 40.5`
+    happy: `M${eL - 3.6} ${hy - 4.2} Q${eL} ${hy - 6.2} ${eL + 3.4} ${hy - 4.8} M${eR - 3.4} ${hy - 4.8} Q${eR} ${hy - 6.2} ${eR + 3.6} ${hy - 4.2}`,
+    impatient: `M${eL - 3.6} ${hy - 4.6} L${eL + 3.4} ${hy - 4.6} M${eR - 3.4} ${hy - 5.4} Q${eR} ${hy - 8.4} ${eR + 3.6} ${hy - 6}`,
+    angry: `M${eL - 3.6} ${hy - 6.2} L${eL + 3.4} ${hy - 3.2} M${eR + 3.6} ${hy - 6.2} L${eR - 3.4} ${hy - 3.2}`,
+    sad: `M${eL - 3.6} ${hy - 3.6} L${eL + 3.4} ${hy - 6.4} M${eR + 3.6} ${hy - 3.6} L${eR - 3.4} ${hy - 6.4}`,
+    done: `M${eL - 3.6} ${hy - 4.4} Q${eL} ${hy - 6.6} ${eL + 3.4} ${hy - 5} M${eR - 3.4} ${hy - 5} Q${eR} ${hy - 6.6} ${eR + 3.6} ${hy - 4.4}`
   }[m];
   const mouth = {
-    happy: `<path d="M${X-4.5} ${mouthY} Q${X} ${mouthY+3.6} ${X+4.5} ${mouthY} Q${X} ${mouthY+1.4} ${X-4.5} ${mouthY}Z" fill="#c9566a"/>`,
-    impatient: `<path d="M${X-3.5} ${mouthY+.6} Q${X+1} ${mouthY-.6} ${X+4} ${mouthY-.2}" stroke="#b54a5e" stroke-width="1.6" fill="none" stroke-linecap="round"/>`,
-    angry: `<path d="M${X-4.5} ${mouthY+2} Q${X} ${mouthY-2.2} ${X+4.5} ${mouthY+2} Q${X} ${mouthY+.6} ${X-4.5} ${mouthY+2}Z" fill="#7a2030"/><path d="M${X-3} ${mouthY+.6} L${X+3} ${mouthY+.6}" stroke="#fff" stroke-width=".9"/>`,
-    sad: `<path d="M${X-4} ${mouthY+2} Q${X-2} ${mouthY-.5} ${X} ${mouthY+.8} Q${X+2} ${mouthY-.5} ${X+4} ${mouthY+2}" stroke="#b54a5e" stroke-width="1.6" fill="none" stroke-linecap="round"/>`,
-    done: `<path d="M${X-5} ${mouthY-.5} Q${X} ${mouthY+5} ${X+5} ${mouthY-.5}Z" fill="#7a2030"/><path d="M${X-4.2} ${mouthY} Q${X} ${mouthY+1.4} ${X+4.2} ${mouthY}" stroke="#fff" stroke-width="1.3" fill="none"/>`
+    happy: `<path d="M${hx - 4} ${mouthY} Q${hx} ${mouthY - .9} ${hx + 4} ${mouthY} Q${hx} ${mouthY + 3.2} ${hx - 4} ${mouthY}Z" fill="#c25468"/><path d="M${hx - 3.6} ${mouthY + .1} Q${hx} ${mouthY + 1} ${hx + 3.6} ${mouthY + .1}" stroke="#8a2f40" stroke-width=".5" fill="none"/>`,
+    impatient: `<path d="M${hx - 3.4} ${mouthY + .8} Q${hx} ${mouthY - .2} ${hx + 3.4} ${mouthY + .2} Q${hx} ${mouthY + 1.8} ${hx - 3.4} ${mouthY + .8}Z" fill="#c25468"/>`,
+    angry: `<path d="M${hx - 4} ${mouthY + 1.6} Q${hx} ${mouthY - 1.6} ${hx + 4} ${mouthY + 1.6} Q${hx} ${mouthY + .4} ${hx - 4} ${mouthY + 1.6}Z" fill="#7a2030"/><path d="M${hx - 2.8} ${mouthY + .5} L${hx + 2.8} ${mouthY + .5}" stroke="#fff" stroke-width=".8"/>`,
+    sad: `<path d="M${hx - 3.8} ${mouthY + 2} Q${hx} ${mouthY - .8} ${hx + 3.8} ${mouthY + 2} Q${hx} ${mouthY + .8} ${hx - 3.8} ${mouthY + 2}Z" fill="#b04a5e"/>`,
+    done: `<path d="M${hx - 5.6} ${mouthY - 1} Q${hx} ${mouthY + 5.8} ${hx + 5.6} ${mouthY - 1} Q${hx} ${mouthY + .2} ${hx - 5.6} ${mouthY - 1}Z" fill="#7a2030"/><path d="M${hx - 4.8} ${mouthY - .6} Q${hx} ${mouthY + 1.6} ${hx + 4.8} ${mouthY - .6} Q${hx} ${mouthY + .3} ${hx - 4.8} ${mouthY - .6}Z" fill="#fff"/><path d="M${hx - 6.4} ${mouthY - 1.6} q.6 .4 .9 1.1 M${hx + 6.4} ${mouthY - 1.6} q-.6 .4 -.9 1.1" stroke="#c48a6a" stroke-width=".5" fill="none"/>`
   }[m];
-  const blushCol = m === "angry" ? "#ff4a3a" : "#ff8f9a";
-  const blushOp = m === "angry" ? .55 : .3;
-  const tears = m === "sad" ? `<path class="drip" d="M${X-8} 49 q-1.4 2.6 0 3.6 q1.4 -1 0 -3.6z" fill="#7fd3ff"/><path class="drip" style="animation-delay:.9s" d="M${X+8} 49 q-1.4 2.6 0 3.6 q1.4 -1 0 -3.6z" fill="#7fd3ff"/>` : "";
-  const chin = fat > 12 ? `<path d="M${X-fc*0.6} 63 Q${X} ${66 + fat * 0.08} ${X+fc*0.6} 63" stroke="#c48766" stroke-width=".9" fill="none" opacity=".8"/>` : "";
-  const vein = m === "angry" ? `<path d="M${X+10} 33 q2 -2 3 0 M${X+14} 31 q-2 2 0 3" stroke="#d8323a" stroke-width="1.2" fill="none"/>` : "";
+  const blush = m === "angry" ? ["#ff4a3a", .5] : ["#ff8f9a", .28];
+  const tears = sad ? `<path class="drip" d="M${eL - 1} ${eyeY + 2.4} q-1.3 2.6 0 3.4 q1.3 -.8 0 -3.4z" fill="#8fd8ff" stroke="#5bb6e8" stroke-width=".3"/><path class="drip" style="animation-delay:.9s" d="M${eR + 1} ${eyeY + 2.4} q-1.3 2.6 0 3.4 q1.3 -.8 0 -3.4z" fill="#8fd8ff" stroke="#5bb6e8" stroke-width=".3"/>` : "";
+  const chin = fat > 9 ? `<path d="M${hx - fc * 0.5} ${hy + fh + 1.2} Q${hx} ${hy + fh + 3 + fat * 0.06} ${hx + fc * 0.5} ${hy + fh + 1.2}" stroke="${LINE}" stroke-width=".6" fill="none" opacity=".6"/>` : "";
 
-  // torso details, clipped to body
-  const muffin = fat > 6 ? `<ellipse cx="${X}" cy="149" rx="${w + 1.5}" ry="${2 + fat * 0.28}" fill="url(#${id}belly)"/>
-      <path d="M${X - w} ${150 + fat * 0.2} Q${X} ${154 + fat * 0.35} ${X + w} ${150 + fat * 0.2}" stroke="#a86d4f" stroke-width="1" fill="none" opacity=".7"/>` : "";
-  const belly = fat > 6 ? `<ellipse cx="${X}" cy="138" rx="${w * 0.8}" ry="${8 + fat * 0.4}" fill="url(#${id}belly)" opacity=".9"/>` : "";
-  const abs = m === "done" ? `<g stroke="#c48766" stroke-width=".8" fill="none" opacity=".75"><path d="M${X} 120 V146"/><path d="M${X-6} 125 q6 1.5 12 0 M${X-6} 132 q6 1.5 12 0 M${X-5.5} 139 q5.5 1.5 11 0"/><path d="M${X-10} 128 q-2 10 3 18 M${X+10} 128 q2 10 -3 18"/></g>` : "";
-  const navel = `<ellipse cx="${X}" cy="${141 + fat * 0.12}" rx=".9" ry="${1.4 + fat * 0.03}" fill="#a06548"/>`;
+  const hairBack = `M${hx - fc - 1.5} ${hy - 4} C${hx - fc - 5} ${hy + 10} ${hx - fc - 6} ${hy + 34} ${hx - fc - 3} ${hy + 52} L${hx - 7} ${hy + 50} L${hx + 7} ${hy + 50} L${hx + fc + 3} ${hy + 52} C${hx + fc + 6} ${hy + 34} ${hx + fc + 5} ${hy + 10} ${hx + fc + 1.5} ${hy - 4} C${hx + fc} ${hy - 22} ${hx - fc} ${hy - 22} ${hx - fc - 1.5} ${hy - 4}Z`;
+  const hairFront = `M${hx - fc - 1.2} ${hy + 4} C${hx - fc - 2} ${hy - 10} ${hx - 8} ${hy - 19} ${hx + 0.5} ${hy - 17.5} C${hx + 9} ${hy - 19} ${hx + fc + 2} ${hy - 10} ${hx + fc + 1.2} ${hy + 4}
+    C${hx + fc - 1.4} ${hy - 4} ${hx + 6} ${hy - 11} ${hx + 1} ${hy - 13} C${hx - 5} ${hy - 10} ${hx - fc + 1} ${hy - 5} ${hx - fc - 1.2} ${hy + 4}Z`;
+  const strands = `<g stroke="#a3714a" stroke-width=".45" fill="none" opacity=".7"><path d="M${hx - 2} ${hy - 15.5} C${hx - 7} ${hy - 13} ${hx - fc} ${hy - 6} ${hx - fc - 1} ${hy + 2}"/><path d="M${hx + 3} ${hy - 15.5} C${hx + 8} ${hy - 12} ${hx + fc} ${hy - 6} ${hx + fc + .6} ${hy + 1}"/><path d="M${hx - fc - 3} ${hy + 10} C${hx - fc - 4.5} ${hy + 26} ${hx - fc - 4} ${hy + 40} ${hx - fc - 2.5} ${hy + 50}"/><path d="M${hx + fc + 3} ${hy + 10} C${hx + fc + 4.5} ${hy + 26} ${hx + fc + 4} ${hy + 40} ${hx + fc + 2.5} ${hy + 50}"/></g>`;
+  const vein = m === "angry" ? `<path d="M${hx + 7} ${hy - 11} q1.6 -1.6 3 0 M${hx + 10.4} ${hy - 12.6} q-1.6 1.6 0 3" stroke="#d8323a" stroke-width=".9" fill="none"/>` : "";
 
-  // room tint + extras
+  /* ---------- clothes and torso detail (clipped to the body) ---------- */
+  const legTop = 135 + fat * 0.12;
+  const bra = `M${X - c - 3} 89 Q${X - c * 0.5} 85.5 ${X} 92.5 Q${X + c * 0.5} 85.5 ${X + c + 3} 89 L${X + c + 3} 108.5 Q${X} 112 ${X - c - 3} 108.5Z`;
+  const torsoDetail = `
+    <path d="M${X - 9} 76.5 Q${X - 4.5} 79 ${X - 1} 78 M${X + 9} 76.5 Q${X + 4.5} 79 ${X + 1} 78" stroke="${LINE}" stroke-width=".55" fill="none" opacity=".55"/>
+    <ellipse cx="${X}" cy="74" rx="7" ry="3" fill="${SHADE}" opacity=".35" filter="url(#${id}blur)"/>
+    ${fat > 3 ? `<ellipse cx="${X}" cy="${123 + fat * 0.1}" rx="${w * 0.72}" ry="${7 + fat * 0.35}" fill="${SKIN_LIGHT}" opacity=".55" filter="url(#${id}blur)"/>` : ""}
+    ${m === "done" ? `<g stroke="${SHADE}" stroke-width=".7" fill="none" opacity=".45"><path d="M${X} 112 V132"/><path d="M${X - 5.5} 117 q5.5 1.4 11 0 M${X - 5.5} 123 q5.5 1.4 11 0 M${X - 5} 129 q5 1.4 10 0"/><path d="M${X - 9.5} 115 q-2 9 2.5 18 M${X + 9.5} 115 q2 9 -2.5 18"/></g>` : ""}
+    <ellipse cx="${X}" cy="${127 + fat * 0.12}" rx=".85" ry="${1.3 + fat * 0.03}" fill="#94573e"/>
+    ${vol(bra, `url(#${id}top)`, { shade: "#24157a", shadow: 3.5, so: .6, line: "#24157a" })}
+    <path d="M${X - c * 0.46} 89 Q${X - c * 0.42} 100 ${X - 1.5} 106 M${X + c * 0.46} 89 Q${X + c * 0.42} 100 ${X + 1.5} 106" stroke="#2e1f8a" stroke-width=".6" fill="none" opacity=".6"/>
+    <path d="M${X - c - 3} 107.5 Q${X} 111 ${X + c + 3} 107.5" stroke="#2e1f8a" stroke-width="2" fill="none"/>
+    <path d="M${X - s + 5} 76 L${X - c * 0.52} 89 M${X + s - 5} 76 L${X + c * 0.52} 89" stroke="#4a33c4" stroke-width="2.2"/>
+    <rect x="${X - h - 6}" y="${legTop}" width="${2 * h + 12}" height="170" fill="url(#${id}legs)"/>
+    <path d="M${X - h - 6} ${legTop} H${X + h + 6}" stroke="#6a4cff" stroke-width="2.4"/>
+    <path d="M${X - h + 1.5} ${legTop + 12} Q${X - legC - kr - 0.5} 214 ${X - legC - 3.6} 278 M${X + h - 1.5} ${legTop + 12} Q${X + legC + kr + 0.5} 214 ${X + legC + 3.6} 278" stroke="#7a5cff" stroke-width="1.3" fill="none"/>
+    <ellipse cx="${X - legC - kr * 0.2}" cy="196" rx="${kr * 0.45}" ry="26" fill="#fff" opacity=".07" filter="url(#${id}blur)"/><ellipse cx="${X + legC + kr * 0.2}" cy="196" rx="${kr * 0.45}" ry="26" fill="#fff" opacity=".07" filter="url(#${id}blur)"/>
+    <path d="M${X} 178 L${X} 200" stroke="#000" stroke-width="2" opacity=".35" filter="url(#${id}blur)"/>
+    ${fat > 4 ? `${vol(`M${X - wb - 0.6} ${legTop + 1} C${X - wb - 1} ${legTop - 4 - fat * 0.2} ${X + wb + 1} ${legTop - 4 - fat * 0.2} ${X + wb + 0.6} ${legTop + 1} C${X + wb * 0.6} ${legTop + 3.5 + fat * 0.18} ${X - wb * 0.6} ${legTop + 3.5 + fat * 0.18} ${X - wb - 0.6} ${legTop + 1}Z`, SKIN, { shadow: 2.6, so: .55 })}` : ""}`;
+
+  /* ---------- room, mood light and effects ---------- */
   const light = { happy: ["#fff4d6", "#ffe3a8"], impatient: ["#f1f2f6", "#d9dce6"], angry: ["#ffe1dc", "#ffb3a8"], sad: ["#c7cee6", "#8f9bc2"], done: ["#e8fbe9", "#bfeec6"] }[m];
-  const crack = m === "sad" ? `<g fill="none" stroke-linecap="round">
-      <path d="M150 64 L132 96 L142 110 L122 146 L136 160 L118 208 M132 96 L104 102 M142 110 L172 128 M122 146 L94 140 M136 160 L162 186 M150 64 L170 54 M150 64 L146 36" stroke="#fff" stroke-width="2.2"/>
-      <path d="M150 64 L132 96 L142 110 L122 146 L136 160" stroke="#4a5070" stroke-width=".8"/>
-      <path d="M150 64 l-14 10 l10 8 z" fill="#fff" opacity=".35"/></g>` : "";
-  const sparkles = m === "done" ? [[44, 92, 7, "#fff"], [160, 170, 5, "#fff"], [152, 80, 4.5, "#ffd84a"], [50, 210, 4, "#ffd84a"]].map(([x, y, r, col], i) =>
-    `<g class="twinkle" style="animation-delay:${i * 0.35}s"><path d="M${x} ${y-r} L${x+r*.28} ${y-r*.28} L${x+r} ${y} L${x+r*.28} ${y+r*.28} L${x} ${y+r} L${x-r*.28} ${y+r*.28} L${x-r} ${y} L${x-r*.28} ${y-r*.28}Z" fill="${col}"/></g>`).join("") : "";
+  const crack = sad ? `<g fill="none" stroke-linecap="round">
+      <path d="M152 62 L134 96 L144 110 L124 146 L138 160 L120 208 M134 96 L108 104 M144 110 L172 128 M124 146 L98 142 M138 160 L164 186 M152 62 L172 52 M152 62 L148 34" stroke="#fff" stroke-width="2"/>
+      <path d="M152 62 L134 96 L144 110 L124 146 L138 160" stroke="#4a5070" stroke-width=".7"/>
+      <path d="M152 62 l-14 10 l10 8 z" fill="#fff" opacity=".3"/></g>` : "";
+  const sparkles = m === "done" ? [[42, 90, 7, "#fff"], [162, 172, 5, "#fff"], [154, 78, 4.5, "#ffd84a"], [48, 212, 4, "#ffd84a"]].map(([x, y, r, col], i) =>
+    `<g class="twinkle" style="animation-delay:${i * 0.35}s"><path d="M${x} ${y - r} L${x + r * .28} ${y - r * .28} L${x + r} ${y} L${x + r * .28} ${y + r * .28} L${x} ${y + r} L${x - r * .28} ${y + r * .28} L${x - r} ${y} L${x - r * .28} ${y - r * .28}Z" fill="${col}"/></g>`).join("") : "";
   const anim = { happy: "", impatient: "sway", angry: "shake", sad: "", done: "bob" }[m];
+  const shoes = [-1, 1].map(sgn => `<path d="M${X + sgn * (legC - 4.4)} 280 Q${X + sgn * (legC - 4.8)} 289 ${X + sgn * legC} 289.5 Q${X + sgn * (legC + 6.5)} 289.5 ${X + sgn * (legC + 5.6)} 283 Q${X + sgn * (legC + 4)} 279 ${X + sgn * legC} 279.5Z" fill="#f6f6fa" stroke="#a9a4b8" stroke-width=".6"/><path d="M${X + sgn * (legC - 4.6)} 287.5 H${X + sgn * (legC + 6)}" stroke="#6a4cff" stroke-width="1.2"/>`).join("");
 
   return `<svg class="mirror" viewBox="0 0 200 330" role="img" aria-label="Mirror reflection, ${INFO[m].name}">
   <defs>
+    <filter id="${id}blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter>
+    <filter id="${id}soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
     <linearGradient id="${id}frame" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0b8"/><stop offset=".3" stop-color="#d9a640"/><stop offset=".6" stop-color="#9a6b18"/><stop offset=".85" stop-color="#e6bd5c"/><stop offset="1" stop-color="#7a5510"/></linearGradient>
     <linearGradient id="${id}wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${light[0]}"/><stop offset="1" stop-color="${light[1]}"/></linearGradient>
     <linearGradient id="${id}floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b88a62"/><stop offset="1" stop-color="#7d5638"/></linearGradient>
-    <linearGradient id="${id}skin" x1="0" x2="1"><stop offset="0" stop-color="#c48766"/><stop offset=".22" stop-color="#e9b391"/><stop offset=".5" stop-color="#f6d0b3"/><stop offset=".78" stop-color="#e9b391"/><stop offset="1" stop-color="#bf8261"/></linearGradient>
-    <linearGradient id="${id}skinA" x1="0" x2="1"><stop offset="0" stop-color="#d39a76"/><stop offset=".5" stop-color="#f3caa9"/><stop offset="1" stop-color="#cf9470"/></linearGradient>
-    <radialGradient id="${id}skinR" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#f8d6bb"/><stop offset="1" stop-color="#d39a76"/></radialGradient>
-    <radialGradient id="${id}face" cx=".45" cy=".4" r=".7"><stop offset="0" stop-color="#f8d6bb"/><stop offset=".75" stop-color="#ebb694"/><stop offset="1" stop-color="#cf9470"/></radialGradient>
-    <radialGradient id="${id}belly" cx=".45" cy=".35" r=".7"><stop offset="0" stop-color="#f7d2b6"/><stop offset=".8" stop-color="#e2a988"/><stop offset="1" stop-color="#c98d6b" stop-opacity="0"/></radialGradient>
-    <linearGradient id="${id}hair" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7a4a2a"/><stop offset=".5" stop-color="#4a2a17"/><stop offset="1" stop-color="#2e190d"/></linearGradient>
+    <linearGradient id="${id}skin" x1="0" x2="1"><stop offset="0" stop-color="#e6ad8b"/><stop offset=".5" stop-color="${SKIN_LIGHT}"/><stop offset="1" stop-color="#e2a886"/></linearGradient>
+    <radialGradient id="${id}face" cx=".45" cy=".4" r=".75"><stop offset="0" stop-color="#fadbc4"/><stop offset="1" stop-color="${SKIN}"/></radialGradient>
+    <linearGradient id="${id}hair" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7d4c2b"/><stop offset=".5" stop-color="#4f2d18"/><stop offset="1" stop-color="#2e190d"/></linearGradient>
     <linearGradient id="${id}top" x1="0" x2="1"><stop offset="0" stop-color="#4a33c4"/><stop offset=".5" stop-color="#7a5cff"/><stop offset="1" stop-color="#4128b0"/></linearGradient>
-    <linearGradient id="${id}legs" x1="0" x2="1"><stop offset="0" stop-color="#14151c"/><stop offset=".3" stop-color="#3a3d4e"/><stop offset=".5" stop-color="#23252f"/><stop offset=".7" stop-color="#3a3d4e"/><stop offset="1" stop-color="#14151c"/></linearGradient>
-    <radialGradient id="${id}dough" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#f0b46a"/><stop offset="1" stop-color="#a8682e"/></radialGradient>
-    <linearGradient id="${id}icing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb3d4"/><stop offset="1" stop-color="#e2558f"/></linearGradient>
+    <linearGradient id="${id}legs" x1="0" x2="1"><stop offset="0" stop-color="#14151c"/><stop offset=".28" stop-color="#3a3d4e"/><stop offset=".5" stop-color="#20222c"/><stop offset=".72" stop-color="#3a3d4e"/><stop offset="1" stop-color="#14151c"/></linearGradient>
     <clipPath id="${id}glass"><ellipse cx="100" cy="165" rx="84" ry="150"/></clipPath>
     <clipPath id="${id}body"><path d="${body}"/></clipPath>
-    <filter id="${id}soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
   </defs>
 
   <g clip-path="url(#${id}glass)">
     <rect x="0" y="0" width="200" height="330" fill="url(#${id}wall)"/>
-    <rect x="132" y="30" width="44" height="80" rx="3" fill="#fff" opacity=".45"/>
-    <path d="M154 30 V110 M132 70 H176" stroke="${light[1]}" stroke-width="2"/>
+    <rect x="134" y="30" width="44" height="80" rx="3" fill="#fff" opacity=".45"/>
+    <path d="M156 30 V110 M134 70 H178" stroke="${light[1]}" stroke-width="2"/>
     <rect x="0" y="262" width="200" height="70" fill="url(#${id}floor)"/>
     <path d="M0 278 H200 M0 298 H200 M40 262 L30 330 M110 262 L114 330 M170 262 L184 330" stroke="#6a462c" stroke-width=".8" opacity=".6"/>
-    <g transform="translate(26 214)"><path d="M0 48 L4 30 H22 L26 48Z" fill="#c9704a"/><path d="M13 30 C2 20 2 6 10 0 C12 10 14 18 13 30 C16 18 24 10 28 6 C28 18 22 26 13 30" fill="#4f8f4a"/></g>
-    <ellipse cx="100" cy="300" rx="${h + 10}" ry="6" fill="#000" opacity=".3" filter="url(#${id}soft)"/>
+    <g transform="translate(24 214)"><path d="M0 48 L4 30 H22 L26 48Z" fill="#c9704a"/><path d="M13 30 C2 20 2 6 10 0 C12 10 14 18 13 30 C16 18 24 10 28 6 C28 18 22 26 13 30" fill="#4f8f4a"/></g>
+    <ellipse cx="100" cy="296" rx="${h + 12}" ry="6" fill="#000" opacity=".3" filter="url(#${id}soft)"/>
 
-    <g transform="translate(0 8)"><g class="${anim}">
-      <path d="M${X+9} 40 Q${X+30} 46 ${X+26} 80 Q${X+24} 92 ${X+17} 96 Q${X+20} 78 ${X+12} 56Z" fill="url(#${id}hair)"/>
-      ${back.join("")}
-      <path d="${body}" fill="url(#${id}skin)"/>
-      <g clip-path="url(#${id}body)">
-        <rect x="${X-6}" y="54" width="12" height="32" fill="url(#${id}skinA)"/>
-        <ellipse cx="${X}" cy="74" rx="7" ry="3.5" fill="#a86d4f" opacity=".45" filter="url(#${id}soft)"/>
-        <path d="M${X-c-2} 84 Q${X} 82 ${X+c+2} 84 L${X+c+2} 100 Q${X} 104 ${X-c-2} 100Z" fill="#000" opacity=".06"/>
-        <path d="M${X-9} 84 Q${X-4} 86 ${X-1} 85 M${X+9} 84 Q${X+4} 86 ${X+1} 85" stroke="#c48766" stroke-width=".8" fill="none"/>
-        ${belly}${abs}${navel}
-        <path d="M${X-c-4} 96 Q${X-c*0.5} 92 ${X} 99 Q${X+c*0.5} 92 ${X+c+4} 96 L${X+c+4} 118 Q${X} 122 ${X-c-4} 118Z" fill="url(#${id}top)"/>
-        <path d="M${X-c*0.5} 97 Q${X-c*0.45} 108 ${X-2} 114 M${X+c*0.5} 97 Q${X+c*0.45} 108 ${X+2} 114" stroke="#2e1f8a" stroke-width=".8" fill="none" opacity=".7"/>
-        <path d="M${X-c-4} 118 Q${X} 122 ${X+c+4} 118" stroke="#2e1f8a" stroke-width="1.6" fill="none"/>
-        <path d="M${X-s+6} 86 L${X-c*0.55} 97 M${X+s-6} 86 L${X+c*0.55} 97" stroke="#4a33c4" stroke-width="2.4"/>
-        <rect x="${X-h-4}" y="${150 + fat * 0.22}" width="${2*h+8}" height="160" fill="url(#${id}legs)"/>
-        <path d="M${X-h-4} ${150 + fat * 0.22} H${X+h+4}" stroke="#6a4cff" stroke-width="2.2"/>
-        <path d="M${X-h+1.5} ${160 + fat * 0.22} Q${X-legC-kr} 220 ${X-legC-kr+2.5} 286 M${X+h-1.5} ${160 + fat * 0.22} Q${X+legC+kr} 220 ${X+legC+kr-2.5} 286" stroke="#7a5cff" stroke-width="1.4" fill="none"/>
-        <ellipse cx="${X-legC-kr*0.25}" cy="200" rx="${kr*0.5}" ry="22" fill="#fff" opacity=".06"/><ellipse cx="${X+legC+kr*0.25}" cy="200" rx="${kr*0.5}" ry="22" fill="#fff" opacity=".06"/>
-        ${muffin}
-      </g>
-      <g><path d="M${X-legC-7} 292 Q${X-legC-8} 286 ${X-legC-2} 285 Q${X-legC+5} 285 ${X-legC+5} 292Z" fill="#f4f4f8" stroke="#b9b4c8" stroke-width=".8"/>
-         <path d="M${X+legC+7} 292 Q${X+legC+8} 286 ${X+legC+2} 285 Q${X+legC-5} 285 ${X+legC-5} 292Z" fill="#f4f4f8" stroke="#b9b4c8" stroke-width=".8"/></g>
-      <g transform="translate(0 8) translate(100 46) scale(1.1) translate(-100 -46)">
-      <ellipse cx="${X}" cy="${fy}" rx="${fc}" ry="${17 + fat * 0.06}" fill="url(#${id}face)"/>
-      <ellipse cx="${X-fc+0.5}" cy="${fy+1}" rx="2" ry="3.4" fill="#e2a988"/><ellipse cx="${X+fc-0.5}" cy="${fy+1}" rx="2" ry="3.4" fill="#e2a988"/>
-      <path d="M${X-fc-1} ${fy+2} C${X-fc-3} ${fy-25} ${X+fc+3} ${fy-27} ${X+fc+1} ${fy} C${X+fc-1} ${fy-9} ${X+4} ${fy-12} ${X-3} ${fy-11} C${X-8} ${fy-10} ${X-fc+1} ${fy-6} ${X-fc-1} ${fy+2}Z" fill="url(#${id}hair)"/>
-      <path d="M${X-5} ${fy-15} Q${X+4} ${fy-17} ${X+9} ${fy-12}" stroke="#a8754a" stroke-width="1" fill="none" opacity=".8"/>
-      <ellipse cx="${X-8}" cy="${fy+6}" rx="3.2" ry="2" fill="${blushCol}" opacity="${blushOp}"/><ellipse cx="${X+8}" cy="${fy+6}" rx="3.2" ry="2" fill="${blushCol}" opacity="${blushOp}"/>
-      <path d="${brows}" stroke="#3a2414" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <g transform="translate(0 6)"><g class="${anim}">
+      <path d="${hairBack}" fill="url(#${id}hair)"/>
+      ${arms}
+      ${vol(body, `url(#${id}skin)`, { shadow: 6, so: 0.45 })}
+      <g clip-path="url(#${id}body)">${torsoDetail}</g>
+      <path d="${body}" fill="none" stroke="${LINE}" stroke-width=".5" opacity=".45"/>
+      ${shoes}
+      ${vol(face, `url(#${id}face)`, { shadow: 3.2, so: 0.4 })}
+      <ellipse cx="${hx - 4.6}" cy="${hy + 5}" rx="2.8" ry="1.7" fill="${blush[0]}" opacity="${blush[1]}" filter="url(#${id}blur)"/><ellipse cx="${hx + 4.6}" cy="${hy + 5}" rx="2.8" ry="1.7" fill="${blush[0]}" opacity="${blush[1]}" filter="url(#${id}blur)"/>
+      <path d="${hairFront}" fill="url(#${id}hair)"/>${strands}
+      <path d="${brows}" stroke="#3a2010" stroke-width="1.35" fill="none" stroke-linecap="round"/>
       ${eyes}
-      <path d="M${X-.4} ${fy+2} Q${X+1.6} ${fy+6.5} ${X-.2} ${fy+7.6} Q${X-1} ${fy+8} ${X-2} ${fy+7.2}" stroke="#b57a5a" stroke-width=".9" fill="none" stroke-linecap="round"/>
+      <path d="M${hx + .2} ${hy + 1.5} Q${hx + 1.6} ${hy + 5.4} ${hx + .4} ${hy + 6.2}" stroke="${SHADE}" stroke-width=".6" fill="none" opacity=".75"/>
+      <path d="M${hx - 1.6} ${hy + 6.1} q.8 .6 1.6 0 M${hx + .4} ${hy + 6.1} q.8 .6 1.6 0" stroke="#9c5f45" stroke-width=".5" fill="none"/>
       ${mouth}${tears}${chin}${vein}
-      </g>
-      ${front.join("")}
-      ${donutSvg}
+      ${hands}
     </g></g>
 
-    <path d="M10 120 L80 -10 L104 -10 L10 160Z" fill="#fff" opacity=".22"/>
-    <path d="M150 330 L196 250 L196 270 L162 330Z" fill="#fff" opacity=".15"/>
+    <path d="M10 120 L80 -10 L104 -10 L10 160Z" fill="#fff" opacity=".2"/>
+    <path d="M150 330 L196 250 L196 270 L162 330Z" fill="#fff" opacity=".14"/>
     ${crack}
     ${sparkles}
   </g>
