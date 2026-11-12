@@ -1,6 +1,6 @@
 # Yulia's Workout
 
-An Android app with a home-screen widget. The 2×1 widget shows Iron Kettle, a cast-iron kettlebell that gets heavier and angrier the longer today's workout waits, next to the current streak. The app has one button that opens the workout site and one button that marks today's workout as done.
+An Android app with a home-screen widget. The 1×1 widget shows Iron Kettle, a cast-iron kettlebell that gets heavier and angrier the longer today's workout waits, with the current streak in the corner. The app has one button that opens the workout site and one button that marks today's workout as done.
 
 - `design/`: the design previews. `kettle.html` is the chosen design, and the widget pictures are rendered from it.
 - `app/`: the Android app (Kotlin, no extra libraries).
