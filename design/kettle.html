@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap">
 <style>
-/* Layout: the 2x1 widget on a phone home screen with a time slider, then the five moods in a row. */
+/* Layout: the 1x1 widget on a phone home screen with a time slider, then the five moods in a row. */
 :root {
   --bg: #f3f1f8; --surface: #ffffff; --fg: #231f33; --muted: #6b6580; --line: #e0dcea; --accent: #6a4cff;
   --display: "Fredoka", "Nunito", system-ui, sans-serif;
@@ -35,12 +35,12 @@ p { margin: 0; }
 .clock { color: #fff; font-family: var(--display); font-size: 2.6rem; font-weight: 500; text-align: center; line-height: 1; font-variant-numeric: tabular-nums; }
 .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .grid4 > span { aspect-ratio: 1; border-radius: 14px; background: rgba(255,255,255,0.22); }
-/* the widget: 2 cells wide, 1 cell high */
-.widget { grid-column: span 2; aspect-ratio: 2 / 1; border-radius: 20px; background: rgba(255,255,255,0.92); display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 4px 8px 4px 2px; }
+/* the widget: one cell, with the streak badge in the bottom corner */
+.widget { position: relative; aspect-ratio: 1; border-radius: 14px; background: rgba(255,255,255,0.92); display: grid; align-items: center; padding: 2px; }
 .widget svg { width: 100%; height: auto; display: block; }
-.streak { display: flex; align-items: center; justify-content: center; gap: 4px; color: #1d1a2b; }
-.streak svg { width: 20px; }
-.streak .num { font-family: var(--display); font-size: 2.2rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.streak { position: absolute; right: 2px; bottom: 2px; display: flex; align-items: center; gap: 2px; color: #fff; background: rgba(29,26,43,0.9); border-radius: 999px; padding: 1px 6px 1px 5px; }
+.streak svg { width: 8px; }
+.streak .num { font-family: var(--display); font-size: 0.75rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 
 .controls { display: flex; flex-direction: column; gap: 22px; width: 100%; min-width: 0; }
 .controls label { font-weight: 700; display: block; margin-bottom: 8px; }
@@ -79,7 +79,7 @@ figcaption span { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; 
 <div class="wrap">
   <header style="display:flex;flex-direction:column;gap:10px">
     <h1>Iron Kettle</h1>
-    <p class="lede">A cast-iron kettlebell that lives in a small 2×1 widget next to your streak. Kettle gets heavier, wider and angrier as the day goes on: 8 kg in the morning, 24 kg and crying by late night. Do the workout and Kettle slims down to a shiny gold 4 kg.</p>
+    <p class="lede">A cast-iron kettlebell that lives in a tiny 1×1 widget with your streak in the corner. Kettle gets heavier, wider and angrier as the day goes on: 8 kg in the morning, 24 kg and crying by late night. Do the workout and Kettle slims down to a shiny gold 4 kg.</p>
   </header>
 
   <section class="live" aria-label="Widget preview">
@@ -93,7 +93,7 @@ figcaption span { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; 
             <span class="num" id="num">12</span>
           </div>
         </div>
-        <span></span><span></span>
+        <span></span><span></span><span></span>
         <span></span><span></span><span></span><span></span>
       </div>
     </div>
