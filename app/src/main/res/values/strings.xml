@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Yulia\'s Workout</string>
-    <string name="widget_name">Workout mirror</string>
-    <string name="widget_desc">Shows your streak, and the mirror gets less flattering the longer you wait.</string>
-    <string name="mirror_desc">Mirror showing how today is going</string>
+    <string name="widget_name">Iron Kettle</string>
+    <string name="widget_desc">Shows your streak, and Kettle gets heavier and angrier the longer you wait.</string>
+    <string name="kettle_desc">Kettle showing how today is going</string>
     <string name="open_workout">Open my workout</string>
     <string name="mark_done">Workout done ✓</string>
     <string name="done_undo">Done for today! Tap to undo</string>

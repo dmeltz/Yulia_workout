@@ -1,0 +1,227 @@
+<title>Iron Kettle Widget</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap">
+<style>
+/* Layout: the 2x1 widget on a phone home screen with a time slider, then the five moods in a row. */
+:root {
+  --bg: #f3f1f8; --surface: #ffffff; --fg: #231f33; --muted: #6b6580; --line: #e0dcea; --accent: #6a4cff;
+  --display: "Fredoka", "Nunito", system-ui, sans-serif;
+  --body: "Nunito", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #15131d; --surface: #1f1c2b; --fg: #eeebf7; --muted: #a39db8; --line: #322e44; --accent: #9b85ff; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #15131d; --surface: #1f1c2b; --fg: #eeebf7; --muted: #a39db8; --line: #322e44; --accent: #9b85ff; color-scheme: dark; }
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 56px;
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); font-weight: 700; }
+h2 { font-size: 1.4rem; font-weight: 600; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 64ch; }
+
+.live { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 32px; align-items: center; }
+@media (max-width: 720px) { .live { grid-template-columns: 1fr; justify-items: center; } }
+.phone {
+  width: 100%; max-width: 340px; border-radius: 34px; padding: 22px 16px 26px;
+  background: linear-gradient(160deg, #3b2f6e, #a04f7a 60%, #f0a868);
+  border: 8px solid #0e0c14; display: flex; flex-direction: column; gap: 16px;
+}
+.clock { color: #fff; font-family: var(--display); font-size: 2.6rem; font-weight: 500; text-align: center; line-height: 1; font-variant-numeric: tabular-nums; }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.grid4 > span { aspect-ratio: 1; border-radius: 14px; background: rgba(255,255,255,0.22); }
+/* the widget: 2 cells wide, 1 cell high */
+.widget { grid-column: span 2; aspect-ratio: 2 / 1; border-radius: 20px; background: rgba(255,255,255,0.92); display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 4px 8px 4px 2px; }
+.widget svg { width: 100%; height: auto; display: block; }
+.streak { display: flex; align-items: center; justify-content: center; gap: 4px; color: #1d1a2b; }
+.streak svg { width: 20px; }
+.streak .num { font-family: var(--display); font-size: 2.2rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+
+.controls { display: flex; flex-direction: column; gap: 22px; width: 100%; min-width: 0; }
+.controls label { font-weight: 700; display: block; margin-bottom: 8px; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.ticks { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.toggle { display: inline-flex; align-items: center; gap: 10px; font: inherit; font-weight: 700; cursor: pointer; border: 2px solid var(--accent); color: var(--accent); background: transparent; padding: 10px 18px; border-radius: 999px; }
+.toggle[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.toggle:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.moodname { font-family: var(--display); font-size: 1.3rem; font-weight: 600; }
+.hint { color: var(--muted); font-size: 0.95rem; max-width: 52ch; }
+
+.row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 460px) { .row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+figure svg { width: 100%; max-width: 170px; height: auto; }
+figcaption { text-align: center; }
+figcaption b { display: block; font-family: var(--display); font-weight: 600; }
+figcaption span { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.shake { animation: shake 0.35s linear infinite; transform-box: fill-box; transform-origin: center bottom; }
+.bob { animation: bob 1s ease-in-out infinite; }
+.sway { animation: sway 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+.drip { animation: drip 1.6s ease-in infinite; }
+.twinkle { animation: twinkle 1.3s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.blink { animation: blink 4s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-2px) } 75% { transform: translateX(2px) } }
+@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+@keyframes sway { 0%,100% { transform: rotate(-1.5deg) } 50% { transform: rotate(1.5deg) } }
+@keyframes drip { 0% { transform: translateY(0); opacity: 1 } 100% { transform: translateY(34px); opacity: 0 } }
+@keyframes twinkle { 0%,100% { transform: scale(0.7); opacity: .6 } 50% { transform: scale(1.15); opacity: 1 } }
+@keyframes blink { 0%,93%,100% { transform: scaleY(1) } 96% { transform: scaleY(0.1) } }
+@media (prefers-reduced-motion: reduce) { svg * { animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <h1>Iron Kettle</h1>
+    <p class="lede">A cast-iron kettlebell that lives in a small 2×1 widget next to your streak. Kettle gets heavier, wider and angrier as the day goes on: 8 kg in the morning, 24 kg and crying by late night. Do the workout and Kettle slims down to a shiny gold 4 kg.</p>
+  </header>
+
+  <section class="live" aria-label="Widget preview">
+    <div class="phone">
+      <div class="clock" id="clock">09:00</div>
+      <div class="grid4">
+        <div class="widget">
+          <div id="live"></div>
+          <div class="streak">
+            <svg viewBox="0 0 24 28" aria-hidden="true"><path d="M12 1 C14 8 21 10 21 18 A9 9 0 0 1 3 18 C3 12 7 10 7 5 C9 9 11 9 12 1Z" fill="#ff7a3d"/><path d="M12 13 C13 17 16 18 16 21 A4 4 0 0 1 8 21 C8 18 11 17 12 13Z" fill="#ffcd3c"/></svg>
+            <span class="num" id="num">12</span>
+          </div>
+        </div>
+        <span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+    <div class="controls">
+      <div>
+        <label for="time">Time of day</label>
+        <input type="range" id="time" min="360" max="1439" step="15" value="540">
+        <div class="ticks"><span>06:00</span><span>12:00</span><span>17:00</span><span>21:00</span><span>23:59</span></div>
+      </div>
+      <div><button class="toggle" id="done" aria-pressed="false" type="button">Workout done</button></div>
+      <div><div class="moodname" id="moodName"></div><p class="hint" id="moodHint"></p></div>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <h2>Through the day</h2>
+    <div class="row" id="row"></div>
+  </section>
+</div>
+
+<script>
+const MOODS = ["happy", "impatient", "angry", "sad", "done"];
+const LABEL = { happy: "Morning", impatient: "Afternoon", angry: "Evening", sad: "Late night", done: "Workout done" };
+const WHEN = { happy: "Until 12:00", impatient: "12:00 – 17:00", angry: "17:00 – 21:00", sad: "21:00 – midnight", done: "Once you mark it" };
+const HINT = {
+  happy: "8 kg, smiling and blinking.",
+  impatient: "12 kg and a little wider, with a side-eye and swaying.",
+  angry: "16 kg, glowing red, shaking and steaming.",
+  sad: "24 kg, fully round and crying.",
+  done: "A slim, shiny gold 4 kg with a big smile, bouncing, with sparkles."
+};
+let uid = 0;
+
+function ironKettle(m) {
+  const id = "k" + (uid++);
+  const cfg = {
+    happy:     { sx: 1.00, kg: "8",  rim: "#4fc3b0", iris: "#3a8f6a" },
+    impatient: { sx: 1.08, kg: "12", rim: "#f2b544", iris: "#7a5a2a" },
+    angry:     { sx: 1.18, kg: "16", rim: "#ff4a3a", iris: "#7a2a2a" },
+    sad:       { sx: 1.30, kg: "24", rim: "#7c8cc4", iris: "#3d5a9a" },
+    done:      { sx: 0.86, kg: "4",  rim: "#ffcf4a", iris: "#3a8f6a" }
+  }[m];
+  const metal = m === "done"
+    ? `<stop offset="0" stop-color="#fff3c4"/><stop offset=".45" stop-color="#d9a73a"/><stop offset="1" stop-color="#6b4a10"/>`
+    : `<stop offset="0" stop-color="#9aa0aa"/><stop offset=".4" stop-color="#4a4e57"/><stop offset="1" stop-color="#14151a"/>`;
+  const rx = 60 * cfg.sx;
+  const eye = (x, flip) => {
+    let lid = "";
+    if (m === "impatient") lid = `<path d="M${x-13} ${124} h26 v-14 h-26z" fill="url(#${id}b)"/><path d="M${x-13} 124 h26" stroke="#111" stroke-width="2.5"/>`;
+    if (m === "angry") lid = `<path d="M${x-14} ${flip ? 108 : 118} L${x+14} ${flip ? 118 : 108} L${x+14} 100 L${x-14} 100z" fill="url(#${id}b)"/>`;
+    if (m === "sad") lid = `<path d="M${x-14} ${flip ? 112 : 118} L${x+14} ${flip ? 118 : 112} L${x+14} 104 L${x-14} 104z" fill="url(#${id}b)"/>`;
+    const look = m === "impatient" ? 5 : 0;
+    const blink = (m === "happy" || m === "done") ? "blink" : "";
+    return `<g class="${blink}"><ellipse cx="${x}" cy="128" rx="12" ry="${m === "sad" ? 13 : 11}" fill="url(#${id}e)"/>
+      <circle cx="${x + look}" cy="129" r="6.5" fill="${cfg.iris}"/><circle cx="${x + look}" cy="129" r="3.4" fill="#0b0b0e"/>
+      <circle cx="${x + look + 2.5}" cy="126" r="1.8" fill="#fff"/></g>${lid}`;
+  };
+  const brows = {
+    happy: "M68 108 Q80 102 92 107 M108 107 Q120 102 132 108",
+    impatient: "M68 110 L92 111 M108 104 Q120 96 132 103",
+    angry: "M66 104 L94 116 M134 104 L106 116",
+    sad: "M68 116 L92 106 M132 116 L108 106",
+    done: "M68 105 Q80 98 92 104 M108 104 Q120 98 132 105"
+  }[m];
+  const mouth = {
+    happy: `<path d="M84 152 Q100 166 116 152" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>`,
+    impatient: `<path d="M88 157 Q102 153 114 155" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>`,
+    angry: `<path d="M82 162 Q100 148 118 162 Q100 158 82 162Z" fill="#2a0c0c" stroke="#111" stroke-width="3"/><path d="M88 159 h24" stroke="#eee" stroke-width="2.5"/>`,
+    sad: `<path d="M84 163 Q92 154 100 159 Q108 154 116 163" stroke="#111" stroke-width="4.5" fill="none" stroke-linecap="round"/>`,
+    done: `<path d="M80 148 Q100 176 120 148Z" fill="#2a0c0c"/><path d="M90 161 Q100 154 110 161 Q100 170 90 161Z" fill="#e8667a"/><path d="M84 149 h32" stroke="#fff" stroke-width="3"/>`
+  }[m];
+  const extra = {
+    happy: "",
+    impatient: "",
+    angry: `<g opacity=".7"><path d="M58 34 q-7 -7 0 -14 q7 -7 0 -14" stroke="#c9c6d3" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M142 34 q-7 -7 0 -14 q7 -7 0 -14" stroke="#c9c6d3" stroke-width="5" fill="none" stroke-linecap="round"/></g>`,
+    sad: `<path class="drip" d="M76 142 q-5 9 0 13 q5 -4 0 -13z" fill="#7fd3ff"/><path class="drip" style="animation-delay:.8s" d="M124 142 q-5 9 0 13 q5 -4 0 -13z" fill="#7fd3ff"/>`,
+    done: `<g class="twinkle"><path d="M30 40 l3 9 l9 3 l-9 3 l-3 9 l-3 -9 l-9 -3 l9 -3z" fill="#ffd84a"/></g><g class="twinkle" style="animation-delay:.6s"><path d="M168 56 l2 7 l7 2 l-7 2 l-2 7 l-2 -7 l-7 -2 l7 -2z" fill="#fff6c8"/></g>`
+  }[m];
+  const anim = { happy: "", impatient: "sway", angry: "shake", sad: "", done: "bob" }[m];
+  return `<svg viewBox="-10 0 220 214" role="img" aria-label="Iron Kettle, ${LABEL[m]}">
+    <defs>
+      <radialGradient id="${id}b" cx=".35" cy=".3" r=".8">${metal}</radialGradient>
+      <linearGradient id="${id}h" x1="0" x2="1">${metal}</linearGradient>
+      <radialGradient id="${id}e" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#cfd2da"/></radialGradient>
+      <filter id="${id}s" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+    </defs>
+    <ellipse cx="100" cy="202" rx="${rx * 0.95}" ry="8" fill="#000" opacity=".25" filter="url(#${id}s)"/>
+    ${m === "done" ? extra : ""}
+    <g class="${anim}">
+      <circle cx="100" cy="134" r="${rx + 6}" fill="${cfg.rim}" opacity=".35" filter="url(#${id}s)"/>
+      <path d="M${100 - 40 * cfg.sx} 98 C${100 - 46 * cfg.sx} 30 ${100 + 46 * cfg.sx} 30 ${100 + 40 * cfg.sx} 98" stroke="url(#${id}h)" stroke-width="18" fill="none" stroke-linecap="round"/>
+      <path d="M${100 - 34 * cfg.sx} 82 C${100 - 36 * cfg.sx} 44 ${100 - 10} 38 100 38" stroke="#fff" stroke-opacity=".25" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <rect x="${100 - rx * 0.7}" y="184" width="${rx * 1.4}" height="14" rx="6" fill="url(#${id}h)"/>
+      <ellipse cx="100" cy="134" rx="${rx}" ry="60" fill="url(#${id}b)"/>
+      <ellipse cx="${100 - rx * 0.4}" cy="100" rx="${rx * 0.28}" ry="12" fill="#fff" opacity=".22" transform="rotate(-28 ${100 - rx * 0.4} 100)"/>
+      <rect x="${100 + rx * 0.35}" y="152" width="30" height="18" rx="4" fill="#000" opacity=".25"/>
+      <text x="${100 + rx * 0.35 + 15}" y="165.5" text-anchor="middle" font-family="Fredoka, Nunito, Arial, sans-serif" font-weight="700" font-size="11" fill="${m === "done" ? "#5a3b05" : "#c9ccd4"}">${cfg.kg}kg</text>
+      <path d="${brows}" stroke="#111" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+      ${eye(80, false)}${eye(120, true)}
+      ${mouth}
+      ${m !== "done" ? extra : ""}
+    </g>
+  </svg>`;
+}
+
+document.getElementById("row").innerHTML = MOODS.map(m =>
+  `<figure>${ironKettle(m)}<figcaption><b>${LABEL[m]}</b><span>${WHEN[m]}</span></figcaption></figure>`).join("");
+
+const time = document.getElementById("time"), doneBtn = document.getElementById("done");
+let current = "";
+const STREAK = 12;
+function moodAt(min, done) {
+  if (done) return "done";
+  if (min < 720) return "happy";
+  if (min < 1020) return "impatient";
+  if (min < 1260) return "angry";
+  return "sad";
+}
+function render() {
+  const min = +time.value, done = doneBtn.getAttribute("aria-pressed") === "true";
+  document.getElementById("clock").textContent = `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+  const m = moodAt(min, done);
+  if (m !== current) { document.getElementById("live").innerHTML = ironKettle(m); current = m; }
+  document.getElementById("num").textContent = done ? STREAK + 1 : STREAK;
+  document.getElementById("moodName").textContent = `${LABEL[m]} · ${WHEN[m]}`;
+  document.getElementById("moodHint").textContent = HINT[m];
+}
+time.addEventListener("input", render);
+doneBtn.addEventListener("click", () => { doneBtn.setAttribute("aria-pressed", doneBtn.getAttribute("aria-pressed") === "true" ? "false" : "true"); render(); });
+render();
+</script>

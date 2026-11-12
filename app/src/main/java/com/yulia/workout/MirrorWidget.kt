@@ -43,7 +43,7 @@ class MirrorWidget : AppWidgetProvider() {
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
             for (id in ids) {
-                val views = RemoteViews(context.packageName, R.layout.widget_mirror)
+                val views = RemoteViews(context.packageName, R.layout.widget_kettle)
                 views.setImageViewResource(R.id.frame_a, mood.frame1)
                 views.setImageViewResource(R.id.frame_b, mood.frame1)
                 views.setImageViewResource(R.id.frame_c, mood.frame2)

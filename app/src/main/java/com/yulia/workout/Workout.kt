@@ -7,13 +7,13 @@ import java.time.LocalTime
 
 const val WORKOUT_URL = "https://my.schooler.biz/s/87955/login"
 
-/** The five pictures in the mirror. Each has two frames that the widget flips between. */
+/** The five Iron Kettle pictures. Each has two frames that the widget flips between. */
 enum class Mood(val frame1: Int, val frame2: Int) {
-    HAPPY(R.drawable.mirror_happy_1, R.drawable.mirror_happy_2),
-    IMPATIENT(R.drawable.mirror_impatient_1, R.drawable.mirror_impatient_2),
-    ANGRY(R.drawable.mirror_angry_1, R.drawable.mirror_angry_2),
-    SAD(R.drawable.mirror_sad_1, R.drawable.mirror_sad_2),
-    DONE(R.drawable.mirror_done_1, R.drawable.mirror_done_2);
+    HAPPY(R.drawable.kettle_happy_1, R.drawable.kettle_happy_2),
+    IMPATIENT(R.drawable.kettle_impatient_1, R.drawable.kettle_impatient_2),
+    ANGRY(R.drawable.kettle_angry_1, R.drawable.kettle_angry_2),
+    SAD(R.drawable.kettle_sad_1, R.drawable.kettle_sad_2),
+    DONE(R.drawable.kettle_done_1, R.drawable.kettle_done_2);
 
     companion object {
         fun now(context: Context, time: LocalTime = LocalTime.now()): Mood = when {
